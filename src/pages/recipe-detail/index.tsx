@@ -45,6 +45,10 @@ export default function RecipeDetail() {
     router.navigate({ path: '/pages/recipe-edit/index', params: { id: recipe.id } });
   };
 
+  const handleCookingMode = () => {
+    router.navigate({ path: '/pages/cooking-mode/index', params: { id: recipe.id } });
+  };
+
   // 分享配置
   useEffect(() => {
     // 动态设置分享配置
@@ -122,6 +126,7 @@ export default function RecipeDetail() {
       {/* 底部按钮 */}
       <View className="bottom-actions">
         <View className="btn-secondary" onClick={handleShare}>分享</View>
+        <View className="btn-cooking" onClick={handleCookingMode}>🍳 烹饪模式</View>
         <View className="btn-secondary" onClick={handleEdit}>编辑</View>
         <View 
           className={`btn-primary ${selected ? 'btn-added' : ''}`}

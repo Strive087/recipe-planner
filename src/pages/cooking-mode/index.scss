@@ -1,0 +1,196 @@
+.cooking-mode-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #1A3C6E;
+  color: #fff;
+  padding: 0 32px;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  padding-bottom: 16px;
+}
+
+.exit-btn-small {
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.recipe-name {
+  font-size: 32px;
+  font-weight: 500;
+  color: #fff;
+  text-align: center;
+  flex: 1;
+  margin: 0 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step-counter {
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+// 进度条
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4CAF50;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+// 主要步骤显示区域
+.step-display {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.step-number-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 60px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 40px;
+  box-shadow: 0 8px 32px rgba(76, 175, 80, 0.4);
+}
+
+.step-desc-large {
+  font-size: 44px;
+  line-height: 1.6;
+  color: #fff;
+  text-align: center;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+// 语音播报控制
+.voice-control {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.voice-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 40px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 60px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  
+  &.playing {
+    background-color: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+  }
+}
+
+.voice-icon {
+  font-size: 40px;
+}
+
+.voice-text {
+  font-size: 32px;
+  color: #fff;
+}
+
+// 底部导航
+.bottom-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 0;
+  gap: 24px;
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 24px;
+  border-radius: 24px;
+  background-color: rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+  
+  &.disabled {
+    opacity: 0.4;
+  }
+  
+  &:active:not(.disabled) {
+    background-color: rgba(255, 255, 255, 0.25);
+    transform: scale(0.98);
+  }
+}
+
+.prev-btn {
+  justify-content: flex-start;
+}
+
+.next-btn {
+  justify-content: flex-end;
+}
+
+.nav-icon {
+  font-size: 36px;
+  color: #fff;
+}
+
+.nav-text {
+  font-size: 36px;
+  font-weight: 500;
+  color: #fff;
+}
+
+// 空状态
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-text {
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 40px;
+}
+
+.exit-btn {
+  font-size: 32px;
+  color: #fff;
+  padding: 24px 64px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+}

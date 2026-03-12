@@ -154,7 +154,7 @@
   left: 0;
   right: 0;
   display: flex;
-  gap: 24rpx;
+  gap: 16rpx;
   padding: 24rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   background-color: #FFFFFF;
@@ -162,7 +162,8 @@
 }
 
 .btn-secondary,
-.btn-primary {
+.btn-primary,
+.btn-cooking {
   flex: 1;
   height: 88rpx;
   line-height: 88rpx;
@@ -176,6 +177,12 @@
   background-color: #FFFFFF;
   border: 2rpx solid #2E75B6;
   color: #2E75B6;
+}
+
+.btn-cooking {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: #FFFFFF;
+  border: none;
 }
 
 .btn-primary {
