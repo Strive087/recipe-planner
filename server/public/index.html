@@ -104,6 +104,9 @@
     <button class="flex-1 py-4 text-sm font-medium text-gray-500 relative hover:text-green-600 transition-colors hidden" data-tab="detail">
       <span>详情</span>
     </button>
+    <button class="flex-1 py-4 text-sm font-medium text-gray-500 relative hover:text-green-600 transition-colors" data-tab="diary">
+      <span>菜谱日记</span>
+    </button>
   </nav>
 
   <!-- Page: Recipe List -->
@@ -297,6 +300,57 @@
     </div>
   </div>
 
+  <!-- Page: Recipe Diary -->
+  <div class="page px-4 py-6 hidden" id="page-diary" style="padding-bottom: 120px;">
+    <div class="mb-4">
+      <h3 class="text-lg font-bold text-gray-800 mb-1">📖 菜谱日记</h3>
+      <p class="text-xs text-gray-500">记录你的烹饪心得和美好时光</p>
+    </div>
+
+    <!-- 添加日记 -->
+    <div class="bg-white rounded-2xl card-shadow-lg p-4 mb-4">
+      <h4 class="text-sm font-semibold text-gray-700 mb-3">✏️ 记录新日记</h4>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">选择菜谱</label>
+          <select id="diary-recipe-select" class="w-full h-10 px-3 rounded-xl bg-gray-50 border-0 text-sm">
+            <option value="">请选择菜谱...</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">烹饪日期</label>
+          <input type="date" id="diary-date" class="w-full h-10 px-3 rounded-xl bg-gray-50 border-0 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">心得笔记</label>
+          <textarea id="diary-notes" placeholder="记录你的烹饪心得、味道如何、有哪些改进..." 
+            class="w-full h-24 p-3 rounded-xl bg-gray-50 border-0 text-sm resize-none focus:ring-2 focus:ring-green-500/20"></textarea>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">自评星级</label>
+          <div class="flex gap-1" id="diary-rating">
+            <button class="diary-star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="1">★</button>
+            <button class="diary-star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="2">★</button>
+            <button class="diary-star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="3">★</button>
+            <button class="diary-star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="4">★</button>
+            <button class="diary-star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="5">★</button>
+          </div>
+        </div>
+        <button onclick="saveDiary()" class="btn-primary w-full h-11 rounded-xl text-white text-sm font-semibold">
+          保存日记
+        </button>
+      </div>
+    </div>
+
+    <!-- 日记列表 -->
+    <div id="diary-list">
+      <div class="text-center py-12 text-gray-400">
+        <div class="text-5xl mb-3">📝</div>
+        <p class="text-xs">还没有日记记录<br>记录你的第一道菜吧！</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl text-sm font-medium hidden z-50 shadow-xl"></div>
 
@@ -411,7 +465,7 @@
     ];
 
     // Init
-    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); setupRatingStars(); checkOnboarding(); loadPantry(); });
+    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); loadDiary(); setupTabs(); setupChips(); setupRatingStars(); checkOnboarding(); loadPantry(); });
 
     // ==================== 智能推荐功能 ====================
     const PANTRY_KEY = 'recipe_planner_pantry';
@@ -1068,6 +1122,179 @@
     let currentStepIndex = 0;
     let wakeLock = null;
     
+    // ==================== 菜谱日记功能 ====================
+    const DIARY_KEY = 'recipe_planner_diary';
+    let diaryEntries = [];
+    let diaryRating = 0;
+
+    // 加载日记数据
+    function loadDiary() {
+      try {
+        const stored = localStorage.getItem(DIARY_KEY);
+        diaryEntries = stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        console.error('Load diary failed:', e);
+        diaryEntries = [];
+      }
+    }
+
+    // 保存日记数据
+    function saveDiaryData() {
+      localStorage.setItem(DIARY_KEY, JSON.stringify(diaryEntries));
+    }
+
+    // 初始化菜谱选择下拉框
+    function initDiaryRecipeSelect() {
+      const select = document.getElementById('diary-recipe-select');
+      if (!select || recipes.length === 0) return;
+      
+      select.innerHTML = '<option value="">请选择菜谱...</option>' + 
+        recipes.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+    }
+
+    // 初始化日记页面
+    function initDiaryPage() {
+      loadDiary();
+      initDiaryRecipeSelect();
+      
+      // 设置默认日期为今天
+      const dateInput = document.getElementById('diary-date');
+      if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+      }
+      
+      // 设置评分点击事件
+      setupDiaryRatingStars();
+      renderDiaryList();
+    }
+
+    // 设置日记评分星星
+    function setupDiaryRatingStars() {
+      document.querySelectorAll('#diary-rating .diary-star-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          diaryRating = parseInt(btn.dataset.rating);
+          updateDiaryRatingStars();
+        });
+        btn.addEventListener('mouseenter', () => {
+          const hoverRating = parseInt(btn.dataset.rating);
+          document.querySelectorAll('#diary-rating .diary-star-btn').forEach((b, i) => {
+            b.classList.toggle('text-yellow-400', i < hoverRating);
+            b.classList.toggle('text-gray-300', i >= hoverRating);
+          });
+        });
+      });
+      document.getElementById('diary-rating').addEventListener('mouseleave', updateDiaryRatingStars);
+    }
+
+    function updateDiaryRatingStars() {
+      document.querySelectorAll('#diary-rating .diary-star-btn').forEach((b, i) => {
+        b.classList.toggle('text-yellow-400', i < diaryRating);
+        b.classList.toggle('text-gray-300', i >= diaryRating);
+      });
+    }
+
+    // 保存日记
+    function saveDiary() {
+      const recipeId = document.getElementById('diary-recipe-select').value;
+      const date = document.getElementById('diary-date').value;
+      const notes = document.getElementById('diary-notes').value.trim();
+      
+      if (!recipeId) return showToast('请选择菜谱');
+      if (!date) return showToast('请选择烹饪日期');
+      
+      const recipe = recipes.find(r => r.id === recipeId);
+      if (!recipe) return showToast('菜谱不存在');
+      
+      const entry = {
+        id: Date.now().toString(),
+        recipeId: recipeId,
+        recipeName: recipe.name,
+        date: date,
+        notes: notes || '',
+        rating: diaryRating || 0,
+        createdAt: new Date().toISOString()
+      };
+      
+      diaryEntries.unshift(entry);
+      saveDiaryData();
+      
+      // 重置表单
+      document.getElementById('diary-recipe-select').value = '';
+      document.getElementById('diary-notes').value = '';
+      diaryRating = 0;
+      updateDiaryRatingStars();
+      document.getElementById('diary-date').value = new Date().toISOString().split('T')[0];
+      
+      renderDiaryList();
+      showToast('日记保存成功！');
+    }
+
+    // 删除日记
+    function deleteDiary(id) {
+      if (!confirm('确定删除这条日记？')) return;
+      
+      diaryEntries = diaryEntries.filter(d => d.id !== id);
+      saveDiaryData();
+      renderDiaryList();
+      showToast('日记已删除');
+    }
+
+    // 渲染日记列表
+    function renderDiaryList() {
+      const container = document.getElementById('diary-list');
+      if (!container) return;
+      
+      if (diaryEntries.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 text-gray-400">
+            <div class="text-5xl mb-3">📝</div>
+            <p class="text-xs">还没有日记记录<br>记录你的第一道菜吧！</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // 按日期分组显示
+      const sortedEntries = [...diaryEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      container.innerHTML = sortedEntries.map(entry => `
+        <div class="bg-white rounded-2xl card-shadow-lg p-4 mb-3">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-lg font-bold">
+                ${entry.recipeName[0]}
+              </div>
+              <div>
+                <h4 class="text-sm font-semibold text-gray-800">${entry.recipeName}</h4>
+                <p class="text-xs text-gray-400">${formatDate(entry.date)}</p>
+              </div>
+            </div>
+            <button onclick="deleteDiary('${entry.id}')" class="text-gray-300 hover:text-red-400 text-lg">×</button>
+          </div>
+          <div class="text-yellow-400 text-sm mb-2">
+            ${'★'.repeat(entry.rating || 0)}${'☆'.repeat(5 - (entry.rating || 0))}
+          </div>
+          ${entry.notes ? `<p class="text-sm text-gray-600 leading-relaxed">${entry.notes}</p>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // 格式化日期
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      if (dateStr === today.toISOString().split('T')[0]) {
+        return '今天';
+      } else if (dateStr === yesterday.toISOString().split('T')[0]) {
+        return '昨天';
+      } else {
+        return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+    }
+
     // Request Wake Lock to keep screen on
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
