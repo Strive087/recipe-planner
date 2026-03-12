@@ -10,6 +10,7 @@ const planRoutes = require('./routes/plan');
 const favoritesRoutes = require('./routes/favorites');
 const pantryRoutes = require('./routes/pantry');
 const commentsRoutes = require('./routes/comments');
+const shoppingRoutes = require('./routes/shopping');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ app.use('/api', planRoutes);
 app.use('/api', favoritesRoutes);
 app.use('/api', pantryRoutes);
 app.use('/api', commentsRoutes);
+app.use('/api', shoppingRoutes);
 
 // 静态文件服务 - 前端页面
 app.use(express.static(path.join(__dirname, '../public')));

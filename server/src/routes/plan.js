@@ -14,8 +14,8 @@ function getPantryItems() {
 
 // 模拟 AI 生成规划
 router.post('/plan/generate', (req, res) => {
-  const { recipes, config } = req.body;
-  const { servings, appetite, avoidFoods } = config || {};
+  const { recipes, config } = req.body || {};
+  const { servings, appetite, avoidFoods } = (config || {});
   
   const appetiteCoeff = appetite === 'large' ? 1.2 : appetite === 'small' ? 0.8 : 1.0;
   
@@ -30,9 +30,20 @@ router.post('/plan/generate', (req, res) => {
     '调料': 'seasoning', '酱油': 'seasoning', '盐': 'seasoning', '糖': 'seasoning',
   };
   
-  recipes.forEach(recipe => {
+  // 如果没有选择菜谱，随机选择
+  let selectedRecipes = recipes || [];
+  if (!selectedRecipes.length) {
+    const db = require('../../models/db');
+    const allRecipes = db.prepare('SELECT * FROM recipes ORDER BY RANDOM() LIMIT 3').all();
+    selectedRecipes = allRecipes;
+  }
+  
+  selectedRecipes.forEach(recipe => {
     const ingredients = recipe.ingredients || [];
-    ingredients.forEach(ing => {
+    if (typeof ingredients === 'string') {
+      try { ingredients = JSON.parse(ingredients); } catch(e) { ingredients = ingredients.split(','); }
+    }
+    (ingredients || []).forEach(ing => {
       // 排除用户指定不吃的食物
       if (avoidFoods && ing.name.includes(avoidFoods)) return;
       // 排除库存中已有的食材

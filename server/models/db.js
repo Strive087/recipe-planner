@@ -76,6 +76,18 @@ db.exec(`
     created_at INTEGER,
     FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS shopping_list (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    amount REAL DEFAULT 1,
+    unit TEXT DEFAULT '份',
+    category TEXT DEFAULT 'other',
+    checked INTEGER DEFAULT 0,
+    source_plan_id TEXT,
+    source_recipe_id TEXT,
+    created_at INTEGER
+  );
 `);
 
 // 创建索引
