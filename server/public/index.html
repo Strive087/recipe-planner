@@ -61,6 +61,17 @@
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+    
+    /* 引导遮罩动画 */
+    @keyframes highlightPulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.2); }
+    }
+    .onboarding-highlight {
+      position: relative;
+      z-index: 50;
+      animation: highlightPulse 2s ease-in-out infinite;
+    }
   </style>
 </head>
 <body class="text-gray-800 text-sm">
@@ -283,6 +294,47 @@
   <!-- Toast -->
   <div id="toast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl text-sm font-medium hidden z-50 shadow-xl"></div>
 
+  <!-- 新用户引导 -->
+  <div id="onboarding-overlay" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 hidden">
+    <!-- 欢迎遮罩 -->
+    <div id="onboarding-welcome" class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center animate-scale-in shadow-2xl">
+        <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-4xl shadow-lg shadow-green-500/30">🌿</div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-3">欢迎使用菜谱规划</h2>
+        <p class="text-sm text-gray-500 mb-8">让我们花一分钟带你了解核心功能</p>
+        <button onclick="startOnboarding()" class="w-full h-12 rounded-2xl btn-primary text-white text-sm font-semibold mb-3">
+          开始体验
+        </button>
+        <button onclick="skipOnboarding()" class="w-full h-10 rounded-xl text-xs font-medium text-gray-400 hover:text-gray-600">
+          跳过
+        </button>
+      </div>
+    </div>
+    
+    <!-- 引导步骤 -->
+    <div id="onboarding-step" class="absolute hidden">
+      <!-- 高亮遮罩 -->
+      <div id="onboarding-mask" class="absolute bg-gray-900/60" style="border-radius: 12px;"></div>
+      <!-- 提示框 -->
+      <div id="onboarding-tooltip" class="absolute bg-white rounded-2xl p-4 shadow-2xl max-w-xs animate-scale-in" style="z-index: 51;">
+        <div class="flex items-start gap-3">
+          <div id="step-icon" class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">1</div>
+          <div class="flex-1">
+            <h4 id="step-title" class="text-sm font-semibold text-gray-800 mb-1">第1步</h4>
+            <p id="step-desc" class="text-xs text-gray-500 leading-relaxed">点击任意菜谱卡片</p>
+          </div>
+        </div>
+        <div class="flex items-center justify-between mt-4">
+          <span id="step-progress" class="text-xs text-gray-400">1/3</span>
+          <div class="flex gap-2">
+            <button onclick="skipOnboarding()" class="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600">跳过</button>
+            <button onclick="nextOnboardingStep()" class="px-4 py-1.5 bg-green-500 text-white text-xs font-medium rounded-full hover:bg-green-600">下一步</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Cooking Mode Overlay -->
   <div id="cooking-mode" class="fixed inset-0 bg-gray-900 z-50 hidden flex flex-col">
     <!-- Header -->
@@ -341,9 +393,19 @@
     let appetite = 'large';
     let currentRecipeId = null;
     let currentRating = 0;
+    
+    // 引导相关
+    const ONBOARDING_KEY = 'recipe_planner_onboarding_done';
+    let onboardingStep = 0;
+    let currentHighlightEl = null;
+    const onboardingSteps = [
+      { target: '#recipe-list', title: '第1步：点击任意菜谱', desc: '从菜谱库中选择你想做的菜品', icon: '1' },
+      { target: '.recipe-card', action: 'click', title: '第2步：查看详情', desc: '点击「详情」按钮查看菜谱详细信息', icon: '2' },
+      { target: 'button:contains("开始烹饪")', action: 'click', title: '第3步：开始烹饪', desc: '按照步骤指引开始烹饪美食吧！', icon: '3' }
+    ];
 
     // Init
-    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); setupRatingStars(); });
+    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); setupRatingStars(); checkOnboarding(); });
 
     // Tabs
     function setupTabs() {
@@ -868,6 +930,171 @@
     });
     
     function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2000); }
+    
+    // ==================== 新用户引导 ====================
+    function checkOnboarding() {
+      const done = localStorage.getItem(ONBOARDING_KEY);
+      if (!done) {
+        // 首次访问，显示欢迎遮罩
+        document.getElementById('onboarding-overlay').classList.remove('hidden');
+        document.getElementById('onboarding-welcome').classList.remove('hidden');
+      }
+    }
+    
+    function startOnboarding() {
+      document.getElementById('onboarding-welcome').classList.add('hidden');
+      document.getElementById('onboarding-step').classList.remove('hidden');
+      onboardingStep = 0;
+      showOnboardingStep();
+    }
+    
+    function skipOnboarding() {
+      document.getElementById('onboarding-overlay').classList.add('hidden');
+      localStorage.setItem(ONBOARDING_KEY, 'true');
+      // 清理高亮
+      if (currentHighlightEl) {
+        currentHighlightEl.style.position = '';
+        currentHighlightEl.style.zIndex = '';
+        currentHighlightEl.style.boxShadow = '';
+        currentHighlightEl = null;
+      }
+    }
+    
+    function showOnboardingStep() {
+      if (onboardingStep >= onboardingSteps.length) {
+        skipOnboarding();
+        return;
+      }
+      
+      const step = onboardingSteps[onboardingStep];
+      const overlay = document.getElementById('onboarding-overlay');
+      const tooltip = document.getElementById('onboarding-tooltip');
+      const mask = document.getElementById('onboarding-mask');
+      
+      // 更新提示内容
+      document.getElementById('step-icon').textContent = step.icon;
+      document.getElementById('step-title').textContent = step.title;
+      document.getElementById('step-desc').textContent = step.desc;
+      document.getElementById('step-progress').textContent = (onboardingStep + 1) + '/' + onboardingSteps.length;
+      
+      // 查找目标元素
+      let targetEl = null;
+      if (step.target === '#recipe-list') {
+        targetEl = document.getElementById('recipe-list');
+      } else if (step.target === '.recipe-card') {
+        // 查找详情按钮
+        targetEl = document.querySelector('.recipe-card button:text("详情")');
+      } else if (step.target.includes('开始烹饪')) {
+        // 查找开始烹饪按钮
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+          if (btn.textContent.includes('开始烹饪')) {
+            targetEl = btn;
+          }
+        });
+      }
+      
+      if (!targetEl) {
+        // 元素不存在，跳过此步骤
+        nextOnboardingStep();
+        return;
+      }
+      
+      // 定位高亮
+      positionHighlight(targetEl, tooltip);
+    }
+    
+    function positionHighlight(targetEl, tooltip) {
+      const mask = document.getElementById('onboarding-mask');
+      const rect = targetEl.getBoundingClientRect();
+      
+      // 设置高亮遮罩位置
+      mask.style.left = (rect.left - 4) + 'px';
+      mask.style.top = (rect.top - 4) + 'px';
+      mask.style.width = (rect.width + 8) + 'px';
+      mask.style.height = (rect.height + 8) + 'px';
+      
+      // 计算 tooltip 位置
+      const tooltipRect = tooltip.getBoundingClientRect();
+      let tooltipTop = rect.bottom + 12;
+      let tooltipLeft = rect.left;
+      
+      // 防止超出屏幕
+      if (tooltipLeft + tooltipRect.width > window.innerWidth - 20) {
+        tooltipLeft = window.innerWidth - tooltipRect.width - 20;
+      }
+      if (tooltipTop + tooltipRect.height > window.innerHeight - 20) {
+        tooltipTop = rect.top - tooltipRect.height - 12;
+      }
+      
+      tooltip.style.left = tooltipLeft + 'px';
+      tooltip.style.top = tooltipTop + 'px';
+    }
+    
+    function nextOnboardingStep() {
+      // 清理当前高亮
+      if (currentHighlightEl) {
+        currentHighlightEl.style.position = '';
+        currentHighlightEl.style.zIndex = '';
+        currentHighlightEl.style.boxShadow = '';
+        currentHighlightEl = null;
+      }
+      
+      onboardingStep++;
+      
+      if (onboardingStep >= onboardingSteps.length) {
+        // 引导完成
+        skipOnboarding();
+        return;
+      }
+      
+      showOnboardingStep();
+    }
+    
+    // 监听页面变化，更新引导位置
+    window.addEventListener('resize', () => {
+      if (!document.getElementById('onboarding-overlay').classList.contains('hidden')) {
+        showOnboardingStep();
+      }
+    });
+    
+    // 监听详情页显示，触发第2步
+    const originalShowDetailPage = showDetailPage;
+    showDetailPage = function(id) {
+      originalShowDetailPage(id);
+      // 如果正在引导且是第2步
+      if (onboardingStep === 1 && !document.getElementById('onboarding-overlay').classList.contains('hidden')) {
+        setTimeout(() => {
+          const step = onboardingSteps[1];
+          document.getElementById('step-icon').textContent = step.icon;
+          document.getElementById('step-title').textContent = step.title;
+          document.getElementById('step-desc').textContent = step.desc;
+          
+          // 查找详情页中的开始烹饪按钮
+          const startBtn = document.querySelector('#detail-content button:text("开始烹饪")');
+          if (startBtn) {
+            const tooltip = document.getElementById('onboarding-tooltip');
+            const mask = document.getElementById('onboarding-mask');
+            const rect = startBtn.getBoundingClientRect();
+            
+            mask.style.left = (rect.left - 4) + 'px';
+            mask.style.top = (rect.top - 4) + 'px';
+            mask.style.width = (rect.width + 8) + 'px';
+            mask.style.height = (rect.height + 8) + 'px';
+            
+            let tooltipTop = rect.bottom + 12;
+            let tooltipLeft = rect.left;
+            
+            if (tooltipLeft + 280 > window.innerWidth - 20) {
+              tooltipLeft = window.innerWidth - 300 - 20;
+            }
+            
+            tooltip.style.left = tooltipLeft + 'px';
+            tooltip.style.top = tooltipTop + 'px';
+          }
+        }, 500);
+      }
+    };
   </script>
 </body>
 </html>
