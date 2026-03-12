@@ -1,0 +1,54 @@
+page {
+  background-color: #F5F7FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 28rpx;
+  color: #333333;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
+}
+
+.container {
+  padding: 24rpx;
+}
+
+/* 颜色变量 */
+:root {
+  --primary: #2E75B6;
+  --primary-dark: #1A3C6E;
+  --primary-light: #EBF3FB;
+  --success: #1B7A3E;
+  --warning: #B45309;
+  --text-primary: #1A1A1A;
+  --text-secondary: #4A4A4A;
+  --text-placeholder: #999999;
+  --border: #EEEEEE;
+  --bg-page: #F5F7FA;
+  --bg-card: #FFFFFF;
+}
+
+/* 按钮样式 */
+.btn-primary {
+  background-color: var(--primary);
+  color: #FFFFFF;
+  border-radius: 48rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.btn-primary:active {
+  opacity: 0.8;
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: var(--primary);
+  border: 2rpx solid var(--primary);
+  border-radius: 48rpx;
+  height: 80rpx;
+  line-height: 76rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+}

@@ -1,0 +1,86 @@
+.recipe-list-page {
+  min-height: 100vh;
+  background-color: #F5F7FA;
+  position: relative;
+  padding-bottom: 120rpx;
+}
+
+.search-area {
+  padding: 24rpx;
+  background-color: #FFFFFF;
+}
+
+.category-tabs {
+  background-color: #FFFFFF;
+  border-bottom: 1rpx solid #EEEEEE;
+  padding-bottom: 16rpx;
+}
+
+.tabs-scroll {
+  white-space: nowrap;
+}
+
+.tabs-wrapper {
+  display: flex;
+  padding: 0 24rpx;
+}
+
+.tab-item {
+  flex-shrink: 0;
+  padding: 12rpx 32rpx;
+  font-size: 28rpx;
+  color: #666666;
+  position: relative;
+  margin-right: 16rpx;
+}
+
+.tab-item.active {
+  color: #2E75B6;
+  font-weight: 500;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 4rpx;
+  background-color: #2E75B6;
+  border-radius: 2rpx;
+}
+
+.recipe-scroll {
+  height: calc(100vh - 300rpx);
+}
+
+.recipe-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 24rpx;
+  gap: 24rpx;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  text-align: center;
+  opacity: 0.5;
+}
+
+.fab-add {
+  position: fixed;
+  right: 32rpx;
+  bottom: 200rpx;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background-color: #2E75B6;
+  color: #FFFFFF;
+  font-size: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(46, 117, 182, 0.4);
+  z-index: 100;
+}

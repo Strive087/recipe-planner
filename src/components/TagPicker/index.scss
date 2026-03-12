@@ -1,0 +1,42 @@
+.tag-picker {
+  padding: 32rpx;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+}
+
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #222222;
+}
+
+.confirm {
+  font-size: 28rpx;
+  color: #2E75B6;
+  font-weight: 500;
+}
+
+.preset-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.tag-item {
+  padding: 16rpx 24rpx;
+  background-color: #F5F7FA;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: #555555;
+}
+
+.tag-item.active {
+  background-color: #2E75B6;
+  color: #FFFFFF;
+}

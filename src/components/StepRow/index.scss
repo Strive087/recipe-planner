@@ -1,0 +1,42 @@
+.step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #EEEEEE;
+}
+
+.step-order {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background-color: #2E75B6;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-input {
+  flex: 1;
+  min-height: 72rpx;
+  background-color: #F5F7FA;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+.delete-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999999;
+  font-size: 32rpx;
+  flex-shrink: 0;
+}

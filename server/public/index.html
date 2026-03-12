@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>菜谱规划助手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac', 400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+            accent: { 50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa', 300: '#fdba74', 400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 900: '#7c2d12' }
+          },
+          fontFamily: {
+            sans: ['DM Sans', 'system-ui', 'sans-serif'],
+            display: ['ZCOOL XiaoWei', 'serif']
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+            'scale-in': 'scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            'float': 'float 3s ease-in-out infinite',
+            'pulse-glow': 'pulseGlow 2s ease-in-out infinite'
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { transform: 'translateY(100%)' }, '100%': { transform: 'translateY(0)' } },
+            scaleIn: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+            float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } },
+            pulseGlow: { '0%, 100%': { boxShadow: '0 0 20px rgba(34, 197, 94, 0.3)' }, '50%': { boxShadow: '0 0 40px rgba(34, 197, 94, 0.5)' } }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: 100vh; }
+    .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.5); }
+    .card-shadow { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.02); }
+    .card-shadow-lg { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04); }
+    .gradient-border { position: relative; }
+    .gradient-border::before { content: ''; position: absolute; inset: 0; padding: 2px; border-radius: inherit; background: linear-gradient(135deg, #22c55e, #f97316, #22c55e); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+    input:focus { outline: none; ring: 2px; ring-color: rgba(34, 197, 94, 0.3); }
+    .chip { transition: all 0.2s ease; }
+    .chip.active { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); }
+    .btn-primary { background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4); transition: all 0.2s ease; }
+    .btn-primary:active { transform: translateY(1px); box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3); }
+    .recipe-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    .recipe-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
+    .recipe-card.selected { background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(34,197,94,0.04)); border-left: 4px solid #22c55e; }
+    .step-number { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .result-card { position: relative; overflow: hidden; }
+    .result-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #22c55e, #4ade80, #f97316); }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+  </style>
+</head>
+<body class="text-gray-800 text-sm">
+  <!-- Header -->
+  <header class="relative overflow-hidden bg-gradient-to-br from-white to-gray-50 pb-20 pt-14 px-6">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%2322c55e\" fill-opacity=\"0.03\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+    <div class="relative flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-xl shadow-lg shadow-green-500/30 animate-float">
+        🌿
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-green-700 to-green-600 bg-clip-text text-transparent">菜谱规划</h1>
+        <p class="text-xs text-gray-400 tracking-widest uppercase">Recipe Planner</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="sticky top-0 z-50 glass border-b border-gray-100 flex">
+    <button class="flex-1 py-4 text-sm font-medium text-gray-500 relative hover:text-green-600 transition-colors" data-tab="list">
+      <span>我的菜谱</span>
+      <div class="active-tab-indicator absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-green-500 rounded-full"></div>
+    </button>
+    <button class="flex-1 py-4 text-sm font-medium text-gray-500 relative hover:text-green-600 transition-colors" data-tab="plan">
+      <span>智能规划</span>
+    </button>
+  </nav>
+
+  <!-- Page: Recipe List -->
+  <div class="page active px-4 py-6" id="page-list">
+    <!-- Search -->
+    <div class="relative mb-6">
+      <input type="text" id="search-input" placeholder="搜索你的菜谱..." 
+        class="w-full h-12 pl-12 pr-4 rounded-2xl bg-white border border-gray-100 shadow-sm text-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-400 transition-all"
+        oninput="filterRecipes()">
+      <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+    </div>
+
+    <!-- Recipe List -->
+    <div class="space-y-3" id="recipe-list">
+      <div class="text-center py-16 text-gray-400">
+        <div class="text-6xl mb-4">🥢</div>
+        <p class="text-sm">还没有菜谱<br>点击下方按钮创建第一道菜</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: AI Planning -->
+  <div class="page px-4 py-6" id="page-plan">
+    <!-- Selected -->
+    <div class="bg-white rounded-2xl card-shadow-lg mb-4 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-50">
+        <h3 class="text-sm font-semibold text-gray-700">已选择</h3>
+      </div>
+      <div class="p-4" id="selected-recipes">
+        <div class="text-center py-8 text-gray-400">
+          <div class="text-5xl mb-3">📋</div>
+          <p class="text-xs">从菜谱库选择菜品开始规划</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="bg-white rounded-2xl card-shadow-lg mb-4 overflow-hidden">
+      <div class="p-5 space-y-5">
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-3 block">用餐人数</label>
+          <input type="number" id="servings" value="2" min="1" max="20" 
+            class="w-24 h-10 text-center rounded-xl bg-gray-50 border-0 text-sm font-medium focus:ring-2 focus:ring-green-500/20">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-3 block">胃口偏好</label>
+          <div class="flex gap-2" id="appetite-options">
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-appetite="normal">正常</button>
+            <button class="chip active px-4 py-2 rounded-full text-xs font-medium" data-appetite="large">丰盛</button>
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-appetite="small">精简</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-3 block">忌口（可选）</label>
+          <input type="text" id="avoid" placeholder="如：香菜、辣椒" 
+            class="w-full h-10 px-4 rounded-xl bg-gray-50 border-0 text-sm focus:ring-2 focus:ring-green-500/20">
+        </div>
+        <button onclick="generatePlan()" class="btn-primary w-full h-12 rounded-2xl text-white text-sm font-semibold">
+          生成规划
+        </button>
+      </div>
+    </div>
+
+    <div id="plan-result"></div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-mask fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 hidden items-end justify-center" id="recipe-modal">
+    <div class="bg-white w-full max-h-[92vh] rounded-t-3xl animate-slide-up overflow-hidden">
+      <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-lg font-bold text-gray-800" id="modal-title">新建菜谱</h3>
+        <button onclick="closeModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-xl text-gray-400">×</button>
+      </div>
+      <div class="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">菜名</label>
+          <input type="text" id="recipe-name" placeholder="给菜品起个名字"
+            class="w-full h-11 px-4 rounded-xl bg-gray-50 border-0 text-sm focus:ring-2 focus:ring-green-500/20">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">份量（人份）</label>
+          <input type="number" id="recipe-servings" value="2" min="1" max="50"
+            class="w-24 h-10 px-4 rounded-xl bg-gray-50 border-0 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">分类</label>
+          <div class="flex flex-wrap gap-2" id="recipe-category">
+            <button class="chip active px-4 py-2 rounded-full text-xs font-medium" data-cat="荤菜">🥩 荤菜</button>
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-cat="素菜">🥬 素菜</button>
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-cat="汤羹">🍲 汤羹</button>
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-cat="主食">🍚 主食</button>
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-cat="其他">🍽️ 其他</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">食材清单</label>
+          <div id="ingredients-list" class="space-y-2"></div>
+          <button onclick="addIngredient()" class="mt-3 w-full h-10 rounded-xl border-2 border-dashed border-gray-200 text-xs font-medium text-gray-400 hover:border-green-300 hover:text-green-500 transition-colors">+ 添加食材</button>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">烹饪步骤</label>
+          <div id="steps-list" class="space-y-2"></div>
+          <button onclick="addStep()" class="mt-3 w-full h-10 rounded-xl border-2 border-dashed border-gray-200 text-xs font-medium text-gray-400 hover:border-green-300 hover:text-green-500 transition-colors">+ 添加步骤</button>
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-gray-100 flex gap-3">
+        <button onclick="closeModal()" class="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">取消</button>
+        <button onclick="saveRecipe()" class="flex-1 h-11 rounded-xl btn-primary text-white text-sm font-semibold">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="fixed bottom-0 left-0 right-0 glass border-t border-gray-100 px-4 py-3 pb-safe">
+    <button onclick="openModal()" class="btn-primary w-full h-12 rounded-2xl text-white text-sm font-semibold">
+      + 创建新菜谱
+    </button>
+  </div>
+
+  <!-- Plan Bar -->
+  <div onclick="showPlanPage()" class="fixed bottom-20 left-4 right-4 h-12 rounded-2xl bg-gradient-to-r from-green-600 to-green-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 animate-pulse-glow cursor-pointer z-40">
+    已选 <span class="bg-white/20 px-2 py-0.5 rounded-lg" id="selected-count">0</span> 道菜 · 开始规划 →
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl text-sm font-medium hidden z-50 shadow-xl"></div>
+
+  <script>
+    const API = '/api';
+    let recipes = [];
+    let selectedIds = new Set();
+    let editingId = null;
+    let appetite = 'large';
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); });
+
+    // Tabs
+    function setupTabs() {
+      document.querySelectorAll('[data-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-tab]').forEach(b => { b.classList.remove('text-green-600'); b.querySelector('div')?.classList.add('hidden'); });
+          btn.classList.add('text-green-600'); btn.querySelector('div')?.classList.remove('hidden');
+          document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+          document.getElementById('page-' + btn.dataset.tab).classList.remove('hidden');
+        });
+      });
+    }
+
+    // Chips
+    function setupChips() {
+      document.querySelectorAll('#appetite-options .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('#appetite-options .chip').forEach(c => { c.classList.remove('active'); c.classList.add('bg-gray-100', 'text-gray-600'); });
+          chip.classList.add('active'); chip.classList.remove('bg-gray-100', 'text-gray-600'); appetite = chip.dataset.appetite;
+        });
+      });
+    }
+
+    // Load
+    async function loadRecipes() {
+      try {
+        const res = await fetch(API + '/recipes');
+        const data = await res.json();
+        recipes = data.data || [];
+        renderRecipes();
+      } catch (e) { showToast('加载失败'); }
+    }
+
+    function filterRecipes() {
+      const kw = document.getElementById('search-input').value.toLowerCase();
+      renderRecipes(kw);
+    }
+
+    function renderRecipes(filter = '') {
+      const container = document.getElementById('recipe-list');
+      const list = filter ? recipes.filter(r => r.name.toLowerCase().includes(filter)) : recipes;
+      if (!list.length) {
+        container.innerHTML = `<div class="text-center py-16 text-gray-400"><div class="text-6xl mb-4">🥢</div><p class="text-sm">${filter ? '没有找到匹配的菜谱' : '还没有菜谱<br>点击下方按钮创建第一道菜'}</p></div>`;
+        return;
+      }
+      container.innerHTML = list.map(r => `
+        <div class="recipe-card bg-white rounded-2xl p-4 card-shadow cursor-pointer ${selectedIds.has(r.id) ? 'selected' : ''}" onclick="toggleSelect('${r.id}')">
+          <div class="flex gap-4">
+            <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-2xl font-bold text-white shadow-lg">${r.name[0]}</div>
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold text-gray-800 truncate">${r.name}</h4>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded-full">${r.category}</span>
+                <span class="text-xs text-gray-400">${r.servings}人份</span>
+              </div>
+              <div class="flex gap-3 mt-2" onclick="event.stopPropagation()">
+                <button onclick="editRecipe('${r.id}')" class="text-xs text-orange-500 font-medium">编辑</button>
+                <button onclick="deleteRecipe('${r.id}')" class="text-xs text-gray-400">删除</button>
+                <button class="text-xs font-medium ${selectedIds.has(r.id) ? 'text-green-600' : 'text-gray-400'}">${selectedIds.has(r.id) ? '✓ 已选' : '+ 选中'}</button>
+              </div>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    function toggleSelect(id) {
+      selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
+      renderRecipes(document.getElementById('search-input').value.toLowerCase());
+      renderSelected();
+      document.getElementById('selected-count').textContent = selectedIds.size;
+    }
+
+    function renderSelected() {
+      const container = document.getElementById('selected-recipes');
+      const selected = recipes.filter(r => selectedIds.has(r.id));
+      if (!selected.length) {
+        container.innerHTML = `<div class="text-center py-8 text-gray-400"><div class="text-5xl mb-3">📋</div><p class="text-xs">从菜谱库选择菜品开始规划</p></div>`;
+        return;
+      }
+      container.innerHTML = selected.map(r => `
+        <div class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+          <span class="text-sm font-medium text-gray-700">${r.name}</span>
+          <button onclick="toggleSelect('${r.id}')" class="w-6 h-6 rounded-full border-2 ${selectedIds.has(r.id) ? 'bg-green-500 border-green-500 text-white text-xs' : 'border-gray-200'} flex items-center justify-center">${selectedIds.has(r.id) ? '✓' : ''}</button>
+        </div>`).join('');
+    }
+
+    async function generatePlan() {
+      const selected = recipes.filter(r => selectedIds.has(r.id));
+      if (!selected.length) return showToast('请先选择菜谱');
+      const servings = parseInt(document.getElementById('servings').value) || 2;
+      const avoidFoods = document.getElementById('avoid').value;
+      showToast('正在生成规划...');
+      try {
+        const res = await fetch(API + '/plan/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipes: selected, config: { servings, appetite, avoidFoods } })
+        });
+        const data = await res.json();
+        if (data.code === 200) renderPlanResult(data.data);
+        else showToast(data.message || '生成失败');
+      } catch (e) { showToast('生成失败'); }
+    }
+
+    function renderPlanResult(result) {
+      document.getElementById('plan-result').innerHTML = `
+        <div class="result-card bg-white rounded-2xl card-shadow-lg mb-4">
+          <div class="px-5 py-4 border-b border-gray-50"><h3 class="font-semibold text-gray-800">🛒 采购清单</h3></div>
+          <div class="p-4 space-y-3">${result.shopping_list.map(i => `<div class="flex justify-between items-center py-2 border-b border-dashed border-gray-100 last:border-0"><span class="text-sm text-gray-700">${i.name}</span><span class="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-semibold rounded-full">${i.totalAmount}${i.unit}</span></div>`).join('')}<div class="text-center py-3 text-xs text-gray-400">共 ${result.shopping_list.length} 种食材</div></div>
+        </div>
+        <div class="result-card bg-white rounded-2xl card-shadow-lg mb-20">
+          <div class="px-5 py-4 border-b border-gray-50"><h3 class="font-semibold text-gray-800">👨‍🍳 烹饪步骤</h3></div>
+          <div class="p-4 space-y-4">${result.cooking_guide.map((s, i) => `<div class="flex gap-4"><div class="step-number w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">${s.order}</div><div class="flex-1"><h4 class="font-semibold text-gray-800 text-sm">${s.title}</h4><p class="text-xs text-gray-400 mt-0.5">⏱ ${s.duration || '适中'}</p>${s.actions.map(a => `<p class="text-xs text-gray-500 mt-1 pl-2 border-l-2 border-green-200">${a}</p>`).join('')}${s.parallel ? `<p class="text-xs bg-orange-50 text-orange-600 mt-2 p-2 rounded-lg">💡 ${s.parallel}</p>` : ''}</div></div>`).join('')}</div>
+        </div>`;
+      showToast('生成完成！');
+      document.getElementById('plan-result').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openModal(id = null) {
+      editingId = id;
+      document.getElementById('recipe-modal').classList.remove('hidden');
+      document.getElementById('recipe-modal').classList.add('flex');
+      document.getElementById('modal-title').textContent = id ? '编辑菜谱' : '创建菜谱';
+      if (id) {
+        const r = recipes.find(x => x.id === id);
+        if (r) {
+          document.getElementById('recipe-name').value = r.name;
+          document.getElementById('recipe-servings').value = r.servings;
+          document.querySelectorAll('#recipe-category .chip').forEach(c => { c.classList.toggle('active', c.dataset.cat === r.category); c.classList.toggle('bg-gray-100', c.dataset.cat !== r.category); c.classList.toggle('text-gray-600', c.dataset.cat !== r.category); });
+          renderIngredients(r.ingredients || [{name:'',amount:0,unit:'g'}]);
+          renderSteps(r.steps || [{order:1,desc:''}]);
+        }
+      } else {
+        document.getElementById('recipe-name').value = '';
+        document.getElementById('recipe-servings').value = '2';
+        renderIngredients([{name:'',amount:0,unit:'g'}]); renderSteps([{order:1,desc:''}]);
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('recipe-modal').classList.add('hidden');
+      document.getElementById('recipe-modal').classList.remove('flex');
+      editingId = null;
+    }
+
+    function renderIngredients(list) {
+      document.getElementById('ingredients-list').innerHTML = list.map((ing, i) => `<div class="flex gap-2"><input type="text" class="flex-1 h-9 px-3 rounded-lg bg-gray-50 text-xs" placeholder="食材" value="${ing.name||''}"><input type="number" class="w-16 h-9 px-2 rounded-lg bg-gray-50 text-xs" placeholder="用量" value="${ing.amount||''}"><select class="w-16 h-9 rounded-lg bg-gray-50 text-xs"><option ${ing.unit==='g'?'selected':''}>克</option><option ${ing.unit==='kg'?'selected':''}>千克</option><option ${ing.unit==='ml'?'selected':''}>毫升</option><option ${ing.unit==='个'?'selected':''}>个</option></select><button onclick="removeIng(${i})" class="w-9 h-9 text-gray-300 hover:text-red-400">×</button></div>`).join('');
+    }
+
+    function renderSteps(list) {
+      document.getElementById('steps-list').innerHTML = list.map((s, i) => `<div class="flex gap-2 items-center"><span class="w-6 text-center font-bold text-green-600 text-sm">${i+1}</span><input type="text" class="flex-1 h-9 px-3 rounded-lg bg-gray-50 text-xs" placeholder="步骤描述" value="${s.desc||''}"><button onclick="removeStep(${i})" class="w-9 h-9 text-gray-300 hover:text-red-400">×</button></div>`).join('');
+    }
+
+    function addIngredient() {
+      const list = getIngredients(); list.push({name:'',amount:0,unit:'g'}); renderIngredients(list);
+    }
+    function removeIng(i) { const l = getIngredients(); if(l.length>1){l.splice(i,1);renderIngredients(l);} }
+    function getIngredients() {
+      const names = document.querySelectorAll('#ingredients-list input[type="text"]');
+      const amounts = document.querySelectorAll('#ingredients-list input[type="number"]');
+      const units = document.querySelectorAll('#ingredients-list select');
+      return Array.from(names).map((n,i) => ({name:n.value,amount:parseFloat(amounts[i].value)||0,unit:units[i].value}));
+    }
+    function addStep() { const l = getSteps(); l.push({order:l.length+1,desc:''}); renderSteps(l); }
+    function removeStep(i) { const l = getSteps(); if(l.length>1){l.splice(i,1);renderSteps(l);} }
+    function getSteps() { return Array.from(document.querySelectorAll('#steps-list input')).map((d,i) => ({order:i+1,desc:d.value})); }
+
+    async function saveRecipe() {
+      const name = document.getElementById('recipe-name').value.trim();
+      if (!name) return showToast('请输入菜名');
+      const servings = parseInt(document.getElementById('recipe-servings').value) || 2;
+      const cat = document.querySelector('#recipe-category .chip.active');
+      const data = { name, servings, category: cat?.dataset.cat || '其他', tags: [], ingredients: getIngredients().filter(i => i.name.trim()), steps: getSteps().filter(s => s.desc.trim()) };
+      try {
+        let url = API + '/recipes', method = 'POST';
+        if (editingId) { url = API + '/recipes/' + editingId; method = 'PUT'; }
+        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const result = await res.json();
+        if (result.code === 200) { showToast('保存成功'); closeModal(); loadRecipes(); }
+        else showToast(result.message || '保存失败');
+      } catch (e) { showToast('保存失败'); }
+    }
+
+    function editRecipe(id) { openModal(id); }
+    async function deleteRecipe(id) {
+      if (!confirm('确定删除？')) return;
+      try {
+        const res = await fetch(API + '/recipes/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.code === 200) { showToast('删除成功'); selectedIds.delete(id); loadRecipes(); }
+        else showToast('删除失败');
+      } catch (e) { showToast('删除失败'); }
+    }
+
+    function showPlanPage() { document.querySelector('[data-tab="plan"]').click(); renderSelected(); }
+    function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2000); }
+  </script>
+</body>
+</html>

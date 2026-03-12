@@ -1,0 +1,54 @@
+.ingredient-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #EEEEEE;
+}
+
+.input-name {
+  flex: 2;
+  height: 72rpx;
+  background-color: #F5F7FA;
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+}
+
+.input-amount {
+  flex: 1;
+  height: 72rpx;
+  background-color: #F5F7FA;
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  text-align: center;
+}
+
+.picker-unit {
+  flex: 1;
+  height: 72rpx;
+  background-color: #F5F7FA;
+  border-radius: 12rpx;
+  padding: 0 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.arrow {
+  font-size: 20rpx;
+  color: #999999;
+}
+
+.delete-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999999;
+  font-size: 32rpx;
+}

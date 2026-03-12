@@ -1,0 +1,90 @@
+const db = require('../models/db');
+
+// 继续添加更多菜谱
+const recipes = [
+  {name:'酱油炒饭',servings:2,category:'主食',tags:['快手','家常'],ingredients:[{name:'米饭',amount:300,unit:'g'},{name:'鸡蛋',amount:2,unit:'个'},{name:'生抽',amount:20,unit:'ml'},{name:'老抽',amount:5,unit:'ml'},{name:'葱花',amount:20,unit:'g'}],steps:[{order:1,desc:'米饭打散'},{order:2,desc:'鸡蛋打散'},{order:3,desc:'热油炒鸡蛋盛出'},{order:4,desc:'炒米饭'},{order:5,desc:'加生抽老抽翻炒'},{order:6,desc:'放葱花出锅'}]},
+  {name:'扬州炒饭',servings:2,category:'主食',tags:['淮扬菜','丰富'],ingredients:[{name:'米饭',amount:300,unit:'g'},{name:'鸡蛋',amount:2,unit:'个'},{name:'火腿',amount:50,unit:'g'},{name:'虾仁',amount:50,unit:'g'},{name:'青豆',amount:30,unit:'g'}],steps:[{order:1,desc:'配料切丁'},{order:2,desc:'鸡蛋炒熟盛出'},{order:3,desc:'炒配料'},{order:4,desc:'放米饭翻炒'},{order:5,desc:'加鸡蛋翻炒'}]},
+  {name:'番茄盖浇饭',servings:2,category:'主食',tags:['快手','盖饭'],ingredients:[{name:'米饭',amount:300,unit:'g'},{name:'番茄',amount:2,unit:'个'},{name:'鸡蛋',amount:2,unit:'个'}],steps:[{order:1,desc:'番茄切块'},{order:2,desc:'炒鸡蛋盛出'},{order:3,desc:'炒番茄出汁'},{order:4,desc:'放鸡蛋翻炒'},{order:5,desc:'浇在米饭上'}]},
+  {name:'肉丝炒面',servings:2,category:'主食',tags:['家常','炒面'],ingredients:[{name:'面条',amount:300,unit:'g'},{name:'猪里脊',amount:150,unit:'g'},{name:'绿豆芽',amount:100,unit:'g'},{name:'生抽',amount:30,unit:'ml'}],steps:[{order:1,desc:'面条煮熟过凉'},{order:2,desc:'肉切丝腌制'},{order:3,desc:'炒肉丝'},{order:4,desc:'炒面条'},{order:5,desc:'加豆芽翻炒'}]},
+  {name:'热干面',servings:2,category:'主食',tags:['武汉','芝麻酱','早餐'],ingredients:[{name:'碱水面',amount:300,unit:'g'},{name:'芝麻酱',amount:40,unit:'g'},{name:'酸豆角',amount:30,unit:'g'},{name:'葱花',amount:20,unit:'g'},{name:'生抽',amount:20,unit:'ml'}],steps:[{order:1,desc:'面条煮至断生'},{order:2,desc:'沥干水分'},{order:3,desc:'加芝麻酱、生抽拌匀'},{order:4,desc:'加酸豆角、葱花'}]},
+  {name:'刀削面',servings:2,category:'主食',tags:['山西','面食','手工'],ingredients:[{name:'面粉',amount:300,unit:'g'},{name:'羊肉',amount:150,unit:'g'},{name:'土豆',amount:100,unit:'g'},{name:'番茄',amount:100,unit:'g'}],steps:[{order:1,desc:'和面成团'},{order:2,desc:'削成面条'},{order:3,desc:'炒浇头'},{order:4,desc:'煮面'},{order:5,desc:'浇上浇头'}]},
+  {name:'炸酱面',servings:2,category:'主食',tags:['北京','炸酱','夏季'],ingredients:[{name:'面条',amount:300,unit:'g'},{name:'五花肉',amount:150,unit:'g'},{name:'黄酱',amount:50,unit:'g'},{name:'甜面酱',amount:20,unit:'g'},{name:'黄瓜',amount:100,unit:'g'}],steps:[{order:1,desc:'肉切丁'},{order:2,desc:'炒肉丁'},{order:3,desc:'加酱炒'},{order:4,desc:'煮面条'},{order:5,desc:'配黄瓜丝'}]},
+  {name:'担担面',servings:2,category:'主食',tags:['四川','麻辣','小吃'],ingredients:[{name:'面条',amount:300,unit:'g'},{name:'肉末',amount:100,unit:'g'},{name:'花生碎',amount:30,unit:'g'},{name:'葱花',amount:20,unit:'g'},{name:'芝麻酱',amount:20,unit:'g'}],steps:[{order:1,desc:'炒肉末'},{order:2,desc:'煮面条'},{order:3,desc:'调酱汁'},{order:4,desc:'拌匀'},{order:5,desc:'撒花生碎、葱花'}]},
+  {name:'兰州拉面',servings:2,category:'主食',tags:['西北','清汤','早餐'],ingredients:[{name:'面粉',amount:300,unit:'g'},{name:'牛肉',amount:200,unit:'g'},{name:'白萝卜',amount:100,unit:'g'},{name:'香菜',amount:20,unit:'g'},{name:'辣椒油',amount:20,unit:'ml'}],steps:[{order:1,desc:'和面醒发'},{order:2,desc:'拉成面条'},{order:3,desc:'煮牛肉汤'},{order:4,desc:'下面条'},{order:5,desc:'配萝卜片、香菜'}]},
+  {name:'汤圆',servings:3,category:'主食',tags:['元宵','甜品','冬至'],ingredients:[{name:'糯米粉',amount:300,unit:'g'},{name:'黑芝麻',amount:100,unit:'g'},{name:'猪油',amount:50,unit:'g'},{name:'糖',amount:50,unit:'g'}],steps:[{order:1,desc:'黑芝麻炒熟磨粉'},{order:2,desc:'加猪油、糖拌匀'},{order:3,desc:'糯米粉加水揉团'},{order:4,desc:'包成汤圆'},{order:5,desc:'煮至浮起'}]},
+  {name:'饺子',servings:4,category:'主食',tags:['北方','春节','家常'],ingredients:[{name:'面粉',amount:500,unit:'g'},{name:'猪肉',amount:300,unit:'g'},{name:'白菜',amount:300,unit:'g'},{name:'葱姜',amount:30,unit:'g'},{name:'盐',amount:10,unit:'g'}],steps:[{order:1,desc:'和面醒发'},{order:2,desc:'肉剁馅，加白菜'},{order:3,desc:'调馅'},{order:4,desc:'擀皮'},{order:5,desc:'包饺子'},{order:6,desc:'煮或蒸'}]},
+  {name:'包子',servings:4,category:'主食',tags:['早餐','发酵','家常'],ingredients:[{name:'面粉',amount:500,unit:'g'},{name:'酵母',amount:5,unit:'g'},{name:'猪肉',amount:300,unit:'g'},{name:'大葱',amount:200,unit:'g'},{name:'生抽',amount:30,unit:'ml'}],steps:[{order:1,desc:'酵母温水化开'},{order:2,desc:'和面发酵2小时'},{order:3,desc:'调馅'},{order:4,desc:'包包子'},{order:5,desc:'醒发15分钟'},{order:6,desc:'蒸15分钟'}]},
+  {name:'花卷',servings:4,category:'主食',tags:['面食','早餐','花式'],ingredients:[{name:'面粉',amount:500,unit:'g'},{name:'酵母',amount:5,unit:'g'},{name:'葱花',amount:100,unit:'g'},{name:'盐',amount:5,unit:'g'},{name:'油',amount:30,unit:'ml'}],steps:[{order:1,desc:'和面发酵'},{order:2,desc:'擀成薄片'},{order:3,desc:'刷油撒葱花盐'},{order:4,desc:'卷起切段'},{order:5,desc:'扭成花卷'},{order:6,desc:'蒸熟'}]},
+  {name:'烙饼',servings:3,category:'主食',tags:['北方','早餐','香脆'],ingredients:[{name:'面粉',amount:300,unit:'g'},{name:'温水',amount:180,unit:'ml'},{name:'盐',amount:3,unit:'g'},{name:'油',amount:30,unit:'ml'}],steps:[{order:1,desc:'面粉加温水揉成团'},{order:2,desc:'醒发15分钟'},{order:3,desc:'擀成薄片'},{order:4,desc:'刷油撒盐'},{order:5,desc:'卷起再擀'},{order:6,desc:'烙至两面金黄'}]},
+  {name:'煎饼果子',servings:1,category:'主食',tags:['天津','街头','早餐'],ingredients:[{name:'绿豆面',amount:100,unit:'g'},{name:'鸡蛋',amount:1,unit:'个'},{name:'油条',amount:1,unit:'根'},{name:'甜面酱',amount:10,unit:'g'},{name:'葱花',amount:10,unit:'g'}],steps:[{order:1,desc:'绿豆面加水调成糊'},{order:2,desc:'摊成薄饼'},{order:3,desc:'打上鸡蛋'},{order:4,desc:'刷甜面酱'},{order:5,desc:'放油条卷起'}]},
+  // 更多素菜
+  {name:'香干芹菜',servings:2,category:'素菜',tags:['家常','快手'],ingredients:[{name:'香干',amount:200,unit:'g'},{name:'芹菜',amount:300,unit:'g'},{name:'蒜',amount:10,unit:'g'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'香干切片'},{order:2,desc:'芹菜切段'},{order:3,desc:'热油炒蒜'},{order:4,desc:'放入香干'},{order:5,desc:'加芹菜翻炒'}]},
+  {name:'木耳山药',servings:2,category:'素菜',tags:['养生','清淡'],ingredients:[{name:'山药',amount:200,unit:'g'},{name:'木耳',amount:50,unit:'g'},{name:'胡萝卜',amount:50,unit:'g'},{name:'蒜',amount:10,unit:'g'}],steps:[{order:1,desc:'山药切片'},{order:2,desc:'木耳泡发'},{order:3,desc:'热油炒蒜'},{order:4,desc:'放入食材翻炒'},{order:5,desc:'加盐调味'}]},
+  {name:'荷兰豆炒藕片',servings:2,category:'素菜',tags:['清脆','健康'],ingredients:[{name:'荷兰豆',amount:150,unit:'g'},{name:'莲藕',amount:200,unit:'g'},{name:'胡萝卜',amount:50,unit:'g'},{name:'蒜',amount:10,unit:'g'}],steps:[{order:1,desc:'荷兰豆去筋'},{order:2,desc:'藕切片泡水'},{order:3,desc:'热油炒蒜'},{order:4,desc:'放藕片翻炒'},{order:5,desc:'加荷兰豆'}]},
+  {name:'松仁玉米',servings:2,category:'素菜',tags:['东北菜','甜香'],ingredients:[{name:'玉米粒',amount:200,unit:'g'},{name:'松子',amount:50,unit:'g'},{name:'胡萝卜',amount:50,unit:'g'},{name:'黄瓜',amount:50,unit:'g'},{name:'糖',amount:15,unit:'g'}],steps:[{order:1,desc:'配料切丁'},{order:2,desc:'松子炒香盛出'},{order:3,desc:'炒玉米等'},{order:4,desc:'加糖'},{order:5,desc:'放松子翻炒'}]},
+  {name:'西葫芦炒蛋',servings:2,category:'素菜',tags:['快手','家常'],ingredients:[{name:'西葫芦',amount:300,unit:'g'},{name:'鸡蛋',amount:2,unit:'个'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'西葫芦切片'},{order:2,desc:'鸡蛋打散'},{order:3,desc:'炒鸡蛋盛出'},{order:4,desc:'炒西葫芦'},{order:5,desc:'放鸡蛋一起炒'}]},
+  {name:'苦瓜炒蛋',servings:2,category:'素菜',tags:['清热','夏季'],ingredients:[{name:'苦瓜',amount:200,unit:'g'},{name:'鸡蛋',amount:2,unit:'个'},{name:'盐',amount:3,unit:'g'},{name:'糖',amount:5,unit:'g'}],steps:[{order:1,desc:'苦瓜切片，用盐腌10分钟'},{order:2,desc:'鸡蛋打散'},{order:3,desc:'炒鸡蛋盛出'},{order:4,desc:'炒苦瓜'},{order:5,desc:'放鸡蛋一起炒'}]},
+  {name:'丝瓜炒蛋',servings:2, category:'素菜',tags:['清淡','夏季'],ingredients:[{name:'丝瓜',amount:300,unit:'g'},{name:'鸡蛋',amount:2,unit:'个'}],steps:[{order:1,desc:'丝瓜切块'},{order:2,desc:'鸡蛋炒熟'},{order:3,desc:'炒丝瓜'},{order:4,desc:'放鸡蛋一起炒'}]},
+  {name:'莴笋炒肉',servings:2,category:'荤菜',tags:['家常','清脆'],ingredients:[{name:'莴笋',amount:300,unit:'g'},{name:'里脊肉',amount:150,unit:'g'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'莴笋切片'},{order:2,desc:'肉切片腌制'},{order:3,desc:'炒肉片'},{order:4,desc:'放莴笋翻炒'}]},
+  {name:'茭白肉丝',servings:2,category:'荤菜',tags:['江南','清淡'],ingredients:[{name:'茭白',amount:300,unit:'g'},{name:'猪里脊',amount:150,unit:'g'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'茭白切丝'},{order:2,desc:'肉切丝腌制'},{order:3,desc:'炒肉丝'},{order:4,desc:'放茭白翻炒'}]},
+  // 更多汤类
+  {name:'豆腐汤',servings:2,category:'汤羹',tags:['家常','清淡'],ingredients:[{name:'豆腐',amount:200,unit:'g'},{name:'鸡蛋',amount:1,unit:'个'},{name:'葱花',amount:10,unit:'g'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'豆腐切块'},{order:2,desc:'加水烧开'},{order:3,desc:'放豆腐'},{order:4,desc:'倒入鸡蛋液'},{order:5,desc:'加盐、葱花'}]},
+  {name:'蘑菇汤',servings:2,category:'汤羹',tags:['鲜美','西式'],ingredients:[{name:'蘑菇',amount:200,unit:'g'},{name:'奶油',amount:30,unit:'g'},{name:'洋葱',amount:50,unit:'g'},{name:'牛奶',amount:200,unit:'ml'}],steps:[{order:1,desc:'蘑菇切片'},{order:2,desc:'炒洋葱、蘑菇'},{order:3,desc:'加牛奶煮'},{order:4,desc:'加奶油'},{order:5,desc:'搅拌均匀'}]},
+  // 凉菜更多
+  {name:'凉拌木耳',servings:2,category:'素菜',tags:['凉菜','爽口'],ingredients:[{name:'木耳',amount:100,unit:'g'},{name:'蒜',amount:15,unit:'g'},{name:'辣椒油',amount:15,unit:'ml'},{name:'醋',amount:10,unit:'ml'}],steps:[{order:1,desc:'木耳泡发焯水'},{order:2,desc:'加蒜末'},{order:3,desc:'加辣椒油、醋'},{order:4,desc:'拌匀'}]},
+  {name:'凉拌腐竹',servings:2,category:'素菜',tags:['凉菜','豆制品'],ingredients:[{name:'腐竹',amount:100,unit:'g'},{name:'黄瓜',amount:100,unit:'g'},{name:'蒜',amount:15,unit:'g'},{name:'辣椒油',amount:15,unit:'ml'}],steps:[{order:1,desc:'腐竹泡发焯水'},{order:2,desc:'黄瓜切块'},{order:3,desc:'加蒜末、辣椒油'},{order:4,desc:'拌匀'}]},
+  {name:'凉拌金针菇',servings:2,category:'素菜',tags:['凉菜','爽脆'],ingredients:[{name:'金针菇',amount:200,unit:'g'},{name:'黄瓜',amount:100,unit:'g'},{name:'蒜',amount:15,unit:'g'},{name:'辣椒油',amount:15,unit:'ml'}],steps:[{order:1,desc:'金针菇焯水'},{order:2,desc:'黄瓜切丝'},{order:3,desc:'加调料拌匀'}]},
+  {name:'皮蛋豆腐',servings:2,category:'素菜',tags:['凉菜','经典'],ingredients:[{name:'皮蛋',amount:2,unit:'个'},{name:'内酯豆腐',amount:1,unit:'盒'},{name:'蒜',amount:10,unit:'g'},{name:'生抽',amount:15,unit:'ml'}],steps:[{order:1,desc:'豆腐切块装盘'},{order:2,desc:'皮蛋切块放在豆腐上'},{order:3,desc:'浇上调料'}]},
+  {name:'拍黄瓜',servings:2,category:'素菜',tags:['凉菜','夏季'],ingredients:[{name:'黄瓜',amount:3,unit:'根'},{name:'蒜',amount:15,unit:'g'},{name:'辣椒油',amount:15,unit:'ml'},{name:'醋',amount:10,unit:'ml'}],steps:[{order:1,desc:'黄瓜拍碎切块'},{order:2,desc:'加盐腌10分钟'},{order:3,desc:'加蒜、辣椒油、醋'},{order:4,desc:'拌匀'}]},
+  // 肉类更多
+  {name:'梅菜扣肉',servings:4,category:'荤菜',tags:['浙菜','蒸菜','下饭'],ingredients:[{name:'五花肉',amount:500,unit:'g'},{name:'梅菜',amount:100,unit:'g'},{name:'生抽',amount:30,unit:'ml'},{name:'老抽',amount:15,unit:'ml'},{name:'糖',amount:20,unit:'g'}],steps:[{order:1,desc:'五花肉煮熟'},{order:2,desc:'抹老抽上色'},{order:3,desc:'炸至表面起泡'},{order:4,desc:'切片码碗'},{order:5,desc:'放梅菜'},{order:6,desc:'蒸1小时'},{order:7,desc:'倒扣装盘'}]},
+  {name:'粉蒸肉',servings:4,category:'荤菜',tags:['鄂菜','蒸菜','米粉'],ingredients:[{name:'五花肉',amount:500,unit:'g'},{name:'米粉',amount:100,unit:'g'},{name:'南瓜',amount:200,unit:'g'},{name:'生抽',amount:30,unit:'ml'},{name:'豆瓣酱',amount:20,unit:'g'}],steps:[{order:1,desc:'五花肉切片'},{order:2,desc:'加调料腌制'},{order:3,desc:'裹米粉'},{order:4,desc:'南瓜垫底'},{order:5,desc:'放肉上面'},{order:6,desc:'蒸1小时'}]},
+  {name:'蒜香排骨',servings:3,category:'荤菜',tags:['炸食','蒜香'],ingredients:[{name:'排骨',amount:500,unit:'g'},{name:'大蒜',amount:100,unit:'g'},{name:'面粉',amount:80,unit:'g'},{name:'盐',amount:5,unit:'g'}],steps:[{order:1,desc:'排骨剁块'},{order:2,desc:'大蒜捣成泥'},{order:3,desc:'排骨裹蒜泥、面粉'},{order:4,desc:'油炸至金黄'}]},
+  {name:'糯米排骨',servings:3,category:'荤菜',tags:['蒸菜','软糯'],ingredients:[{name:'排骨',amount:400,unit:'g'},{name:'糯米',amount:150,unit:'g'},{name:'生抽',amount:30,unit:'ml'},{name:'老抽',amount:10,unit:'ml'}],steps:[{order:1,desc:'糯米泡4小时'},{order:2,desc:'排骨腌制'},{order:3,desc:'排骨裹糯米'},{order:4,desc:'上锅蒸1小时'}]},
+  {name:'红烧排骨',servings:4,category:'荤菜',tags:['家常','经典'],ingredients:[{name:'排骨',amount:600,unit:'g'},{name:'冰糖',amount:30,unit:'g'},{name:'生抽',amount:30,unit:'ml'},{name:'老抽',amount:15,unit:'ml'},{name:'八角',amount:2,unit:'个'}],steps:[{order:1,desc:'排骨剁块焯水'},{order:2,desc:'炒糖色'},{order:3,desc:'放排骨翻炒'},{order:4,desc:'加调料和水'},{order:5,desc:'小火炖40分钟'},{order:6,desc:'收汁'}]},
+  {name:'糖醋排骨',servings:3,category:'荤菜',tags:['酸甜','老北京'],ingredients:[{name:'排骨',amount:500,unit:'g'},{name:'糖',amount:40,unit:'g'},{name:'醋',amount:30,unit:'ml'},{name:'番茄酱',amount:30,unit:'g'}],steps:[{order:1,desc:'排骨焯水'},{order:2,desc:'炸至金黄'},{order:3,desc:'炒糖醋汁'},{order:4,desc:'放排骨翻炒'}]},
+  {name:'烤箱排骨',servings:3,category:'荤菜',tags:['烤箱','蜜汁'],ingredients:[{name:'排骨',amount:500,unit:'g'},{name:'叉烧酱',amount:50,unit:'g'},{name:'蜂蜜',amount:30,unit:'ml'}],steps:[{order:1,desc:'排骨腌制24小时'},{order:2,desc:'烤箱200度'},{order:3,desc:'烤20分钟'},{order:4,desc:'刷蜂蜜再烤15分钟'}]},
+  // 鸡蛋更多做法
+  {name:'韭菜炒蛋',servings:2,category:'荤菜',tags:['家常','快手'],ingredients:[{name:'韭菜',amount:200,unit:'g'},{name:'鸡蛋',amount:3,unit:'个'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'韭菜切段'},{order:2,desc:'鸡蛋打散'},{order:3,desc:'炒鸡蛋盛出'},{order:4,desc:'炒韭菜'},{order:5,desc:'放鸡蛋一起炒'}]},
+  {name:'苦瓜摊蛋',servings:2,category:'荤菜',tags:['清热','夏季'],ingredients:[{name:'苦瓜',amount:150,unit:'g'},{name:'鸡蛋',amount:3,unit:'个'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'苦瓜切片用盐腌'},{order:2,desc:'鸡蛋打散'},{order:3,desc:'混合'},{order:4,desc:'摊成饼'}]},
+  {name:'蒜苔炒蛋',servings:2,category:'荤菜',tags:['家常','时令'],ingredients:[{name:'蒜苔',amount:200,unit:'g'},{name:'鸡蛋',amount:2,unit:'个'}],steps:[{order:1,desc:'蒜苔切段'},{order:2,desc:'炒鸡蛋'},{order:3,desc:'炒蒜苔'},{order:4,desc:'一起炒'}]},
+  // 豆腐更多
+  {name:'家常豆腐',servings:2,category:'素菜',tags:['家常','煎炸'],ingredients:[{name:'豆腐',amount:400,unit:'g'},{name:'木耳',amount:50,unit:'g'},{name:'青椒',amount:50,unit:'g'},{name:'郫县豆瓣酱',amount:20,unit:'g'}],steps:[{order:1,desc:'豆腐切块煎至两面金黄'},{order:2,desc:'炒配菜'},{order:3,desc:'放豆腐'},{order:4,desc:'加豆瓣酱'}]},
+  {name:'豆腐箱',servings:3,category:'素菜',tags:['山东','酿菜'],ingredients:[{name:'豆腐',amount:400,unit:'g'},{name:'猪肉',amount:150,unit:'g'},{name:'葱姜',amount:20,unit:'g'}],steps:[{order:1,desc:'豆腐切块炸金黄'},{order:2,desc:'挖空'},{order:3,desc:'酿肉馅'},{order:4,desc:'蒸15分钟'},{order:5,desc:'浇汁'}]},
+  // 土豆更多
+  {name:'狼牙土豆',servings:2,category:'素菜',tags:['四川','小吃','油炸'],ingredients:[{name:'土豆',amount:300,unit:'g'},{name:'辣椒油',amount:20,unit:'ml'},{name:'花椒粉',amount:5,unit:'g'},{name:'葱花',amount:20,unit:'g'}],steps:[{order:1,desc:'土豆切波浪条'},{order:2,desc:'炸至金黄'},{order:3,desc:'加调料拌匀'}]},
+  {name:'土豆泥',servings:2,category:'素菜',tags:['西餐','奶香'],ingredients:[{name:'土豆',amount:300,unit:'g'},{name:'牛奶',amount:100,unit:'ml'},{name:'黄油',amount:30,unit:'g'},{name:'盐',amount:3,unit:'g'}],steps:[{order:1,desc:'土豆蒸熟'},{order:2,desc:'压成泥'},{order:3,desc:'加黄油、牛奶'},{order:4,desc:'搅拌均匀'}]},
+  // 面条更多
+  {name:'打卤面',servings:2,category:'主食',tags:['北方','卤味'],ingredients:[{name:'面条',amount:300,unit:'g'},{name:'五花肉',amount:100,unit:'g'},{name:'黄花菜',amount:30,unit:'g'},{name:'木耳',amount:30,unit:'g'},{name:'鸡蛋',amount:2,unit:'个'}],steps:[{order:1,desc:'炒肉丝'},{order:2,desc:'加配菜'},{order:3,desc:'加水煮卤'},{order:4,desc:'浇在面条上'}]},
+  {name:'老北京炸酱面',servings:2,category:'主食',tags:['北京','炸酱'],ingredients:[{name:'面条',amount:300,unit:'g'},{name:'五花肉',amount:150,unit:'g'},{name:'黄酱',amount:80,unit:'g'},{name:'甜面酱',amount:20,unit:'g'},{name:'黄瓜',amount:100,unit:'g'}],steps:[{order:1,desc:'肉切丁'},{order:2,desc:'炸酱'},{order:3,desc:'煮面'},{order:4,desc:'配菜码'}]},
+  // 鱼更多
+  {name:'酸菜鱼',servings:4,category:'荤菜',tags:['川菜','酸辣','经典'],ingredients:[{name:'草鱼',amount:800,unit:'g'},{name:'酸菜',amount:300,unit:'g'},{name:'泡椒',amount:30,unit:'g'},{name:'蛋清',amount:1,unit:'个'}],steps:[{order:1,desc:'鱼片成片'},{order:2,desc:'酸菜切段'},{order:3,desc:'炒酸菜'},{order:4,desc:'加水煮汤'},{order:5,desc:'放鱼片'},{order:6,desc:'浇热油'}]},
+  {name:'水煮鱼',servings:4,category:'荤菜',tags:['川菜','麻辣','重口'],ingredients:[{name:'草鱼',amount:800,unit:'g'},{name:'豆芽',amount:300,unit:'g'},{name:'郫县豆瓣酱',amount:60,unit:'g'},{name:'干辣椒',amount:50,unit:'g'},{name:'花椒',amount:20,unit:'g'}],steps:[{order:1,desc:'鱼片腌制'},{order:2,desc:'炒底料'},{order:3,desc:'加水煮'},{order:4,desc:'放鱼片'},{order:5,desc:'浇热油'}]},
+  {name:'松鼠桂鱼',servings:3,category:'荤菜',tags:['苏帮菜','酸甜','刀工'],ingredients:[{name:'桂鱼',amount:600,unit:'g'},{name:'番茄酱',amount:60,unit:'g'},{name:'糖',amount:40,unit:'g'},{name:'醋',amount:30,unit:'ml'}],steps:[{order:1,desc:'鱼去骨，切花刀'},{order:2,desc:'裹淀粉炸至金黄'},{order:3,desc:'炒番茄酱汁'},{order:4,desc:'浇在鱼身上'}]},
+  {name:'烤鱼',servings:3,category:'荤菜',tags:['川味','烧烤','聚会'],ingredients:[{name:'草鱼',amount:700,unit:'g'},{name:'藕',amount:100,unit:'g'},{name:'土豆',amount:100,unit:'g'},{name:'豆皮',amount:100,unit:'g'},{name:'郫县豆瓣酱',amount:50,unit:'g'}],steps:[{order:1,desc:'鱼两面煎黄'},{order:2,desc:'炒底料'},{order:3,desc:'放配菜'},{order:4,desc:'放鱼'},{order:5,desc:'加汤焖煮'}]},
+  // 鸡肉更多
+  {name:'鸡公煲',servings:3,category:'荤菜',tags:['重庆','干锅','麻辣'],ingredients:[{name:'鸡肉',amount:600,unit:'g'},{name:'芹菜',amount:100,unit:'g'},{name:'洋葱',amount:100,unit:'g'},{name:'干辣椒',amount:30,unit:'g'},{name:'豆瓣酱',amount:40,unit:'g'}],steps:[{order:1,desc:'鸡肉斩块'},{order:2,desc:'炒香调料'},{order:3,desc:'放鸡肉翻炒'},{order:4,desc:'加配菜焖'}]},
+  {name:'叫化鸡',servings:4,category:'荤菜',tags:['苏帮菜','荷叶','特色'],ingredients:[{name:'母鸡',amount:1200,unit:'g'},{name:'荷叶',amount:1,unit:'张'},{name:'黄泥',amount:500,unit:'g'},{name:'锡纸',amount:1,unit:'张'}],steps:[{order:1,desc:'鸡腌制'},{order:2,desc:'包荷叶'},{order:3,desc:'裹黄泥'},{order:4,desc:'烤3小时'}]},
+  {name: '盐焗鸡',servings:4, category: '荤菜', tags: ['粤菜', '盐焗', '原味'], ingredients: [{name:'三黄鸡',amount:1000,unit:'g'},{name:'粗盐',amount:1500,unit:'g'},{name:'姜',amount:30,unit:'g'},{name:'葱',amount:30,unit:'g'}], steps: [{order:1,desc:'鸡处理干净'},{order:2,desc:'用姜葱腌制'},{order:3,desc:'包锡纸'},{order:4,desc:'埋入粗盐中'},{order:5,desc:'小火焗1小时'}]}
+];
+
+const insert = db.prepare(`
+  INSERT INTO recipes (id, name, cover_image, servings, category, tags, ingredients, steps, created_at, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const now = Date.now();
+let count = 0;
+
+for (const r of recipes) {
+  const id = 'recipe_' + now + '_' + Math.random().toString(36).substr(2, 9);
+  try {
+    insert.run(id, r.name, '', r.servings, r.category, JSON.stringify(r.tags), JSON.stringify(r.ingredients), JSON.stringify(r.steps), now, now);
+    count++;
+    console.log(`✓ ${r.name}`);
+  } catch (e) {
+    console.log(`✗ ${r.name}: ${e.message}`);
+  }
+}
+
+console.log(`\n✅ 成功导入 ${count} 道菜谱！`);
