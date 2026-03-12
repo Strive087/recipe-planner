@@ -87,6 +87,9 @@
     <button class="flex-1 py-4 text-sm font-medium text-gray-500 relative hover:text-green-600 transition-colors" data-tab="plan">
       <span>智能规划</span>
     </button>
+    <button class="flex-1 py-4 text-sm font-medium text-gray-500 relative hover:text-green-600 transition-colors hidden" data-tab="detail">
+      <span>详情</span>
+    </button>
   </nav>
 
   <!-- Page: Recipe List -->
@@ -236,6 +239,47 @@
     已选 <span class="bg-white/20 px-2 py-0.5 rounded-lg" id="selected-count">0</span> 道菜 · 开始规划 →
   </div>
 
+  <!-- Page: Recipe Detail -->
+  <div class="page px-4 py-6 hidden" id="page-detail" style="padding-bottom: 120px;">
+    <button onclick="showListPage()" class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+      <span>←</span> 返回列表
+    </button>
+    <div id="detail-content"></div>
+    
+    <!-- Comments Section -->
+    <div class="mt-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-gray-800">用户评论</h3>
+        <span class="text-xs text-gray-400" id="comment-count">0 条评论</span>
+      </div>
+      
+      <!-- Comment Form -->
+      <div class="bg-white rounded-2xl card-shadow p-4 mb-4">
+        <div class="mb-3">
+          <label class="text-xs font-medium text-gray-500 mb-2 block">评分</label>
+          <div class="flex gap-1" id="rating-stars">
+            <button class="star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="1">★</button>
+            <button class="star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="2">★</button>
+            <button class="star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="3">★</button>
+            <button class="star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="4">★</button>
+            <button class="star-btn text-2xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="5">★</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">评论内容</label>
+          <textarea id="comment-text" placeholder="分享你的烹饪体验..." 
+            class="w-full h-20 p-3 rounded-xl bg-gray-50 border-0 text-sm resize-none focus:ring-2 focus:ring-green-500/20"></textarea>
+        </div>
+        <button onclick="submitComment()" class="btn-primary w-full h-10 rounded-xl text-white text-sm font-semibold mt-3">
+          提交评论
+        </button>
+      </div>
+      
+      <!-- Comments List -->
+      <div id="comments-list" class="space-y-3"></div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl text-sm font-medium hidden z-50 shadow-xl"></div>
 
@@ -245,9 +289,11 @@
     let selectedIds = new Set();
     let editingId = null;
     let appetite = 'large';
+    let currentRecipeId = null;
+    let currentRating = 0;
 
     // Init
-    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); });
+    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); setupRatingStars(); });
 
     // Tabs
     function setupTabs() {
@@ -313,6 +359,7 @@
                 ${r.prep_time || r.cook_time ? `<span class="text-xs text-gray-400">🕐 ${(r.prep_time || 0) + (r.cook_time || 0)}分钟</span>` : ''}
               </div>
               <div class="flex gap-3 mt-2" onclick="event.stopPropagation()">
+                <button onclick="showDetailPage('${r.id}')" class="text-xs text-blue-500 font-medium">详情</button>
                 <button onclick="editRecipe('${r.id}')" class="text-xs text-orange-500 font-medium">编辑</button>
                 <button onclick="deleteRecipe('${r.id}')" class="text-xs text-gray-400">删除</button>
                 <button class="text-xs font-medium ${selectedIds.has(r.id) ? 'text-green-600' : 'text-gray-400'}">${selectedIds.has(r.id) ? '✓ 已选' : '+ 选中'}</button>
@@ -452,6 +499,185 @@
     }
 
     function showPlanPage() { document.querySelector('[data-tab="plan"]').click(); renderSelected(); }
+    
+    // Detail Page
+    function showDetailPage(id) {
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) return;
+      currentRecipeId = id;
+      
+      // Show detail tab
+      document.querySelectorAll('[data-tab]').forEach(b => { b.classList.remove('text-green-600'); b.querySelector('div')?.classList.add('hidden'); });
+      document.querySelector('[data-tab="detail"]').classList.remove('hidden');
+      document.querySelector('[data-tab="detail"]').classList.add('text-green-600');
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('page-detail').classList.remove('hidden');
+      
+      // Render recipe detail
+      const detailContent = document.getElementById('detail-content');
+      detailContent.innerHTML = `
+        <div class="bg-white rounded-2xl card-shadow-lg overflow-hidden mb-4">
+          <div class="h-32 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+            <span class="text-6xl font-bold text-white/80">${recipe.name[0]}</span>
+          </div>
+          <div class="p-5">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">${recipe.name}</h2>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="px-3 py-1 bg-green-50 text-green-600 text-xs rounded-full">${recipe.category}</span>
+              <span class="px-3 py-1 bg-orange-50 text-orange-600 text-xs rounded-full">${recipe.difficulty || '中等'}</span>
+              <span class="px-3 py-1 bg-blue-50 text-blue-600 text-xs rounded-full">${recipe.servings}人份</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div class="bg-gray-50 rounded-xl p-3">
+                <div class="text-xs text-gray-400">准备时间</div>
+                <div class="font-semibold text-gray-700">${recipe.prep_time || 10} 分钟</div>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-3">
+                <div class="text-xs text-gray-400">烹饪时间</div>
+                <div class="font-semibold text-gray-700">${recipe.cook_time || 20} 分钟</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl card-shadow-lg overflow-hidden mb-4">
+          <div class="px-5 py-4 border-b border-gray-50">
+            <h3 class="font-semibold text-gray-800">🥬 食材清单</h3>
+          </div>
+          <div class="p-4 space-y-2">
+            ${(recipe.ingredients || []).map(i => `
+              <div class="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                <span class="text-sm text-gray-700">${i.name}</span>
+                <span class="text-sm font-medium text-green-600">${i.amount}${i.unit}</span>
+              </div>
+            `).join('') || '<p class="text-sm text-gray-400">暂无食材</p>'}
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl card-shadow-lg overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-50">
+            <h3 class="font-semibold text-gray-800">👨‍🍳 烹饪步骤</h3>
+          </div>
+          <div class="p-4 space-y-4">
+            ${(recipe.steps || []).map((s, i) => `
+              <div class="flex gap-3">
+                <div class="step-number w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">${i + 1}</div>
+                <p class="text-sm text-gray-600 flex-1">${s.desc}</p>
+              </div>
+            `).join('') || '<p class="text-sm text-gray-400">暂无步骤</p>'}
+          </div>
+        </div>
+      `;
+      
+      // Reset comment form
+      currentRating = 0;
+      updateRatingStars();
+      document.getElementById('comment-text').value = '';
+      
+      // Load comments
+      loadComments(id);
+    }
+    
+    function showListPage() {
+      document.querySelectorAll('[data-tab]').forEach(b => { 
+        b.classList.remove('text-green-600'); 
+        if (b.dataset.tab === 'detail') b.classList.add('hidden');
+      });
+      document.querySelector('[data-tab="list"]').classList.add('text-green-600');
+      document.querySelector('[data-tab="list"]').querySelector('div')?.classList.remove('hidden');
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('page-list').classList.remove('hidden');
+      currentRecipeId = null;
+    }
+    
+    // Rating
+    function setupRatingStars() {
+      document.querySelectorAll('#rating-stars .star-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentRating = parseInt(btn.dataset.rating);
+          updateRatingStars();
+        });
+        btn.addEventListener('mouseenter', () => {
+          const hoverRating = parseInt(btn.dataset.rating);
+          document.querySelectorAll('#rating-stars .star-btn').forEach((b, i) => {
+            b.classList.toggle('text-yellow-400', i < hoverRating);
+            b.classList.toggle('text-gray-300', i >= hoverRating);
+          });
+        });
+      });
+      document.getElementById('rating-stars').addEventListener('mouseleave', updateRatingStars);
+    }
+    
+    function updateRatingStars() {
+      document.querySelectorAll('#rating-stars .star-btn').forEach((b, i) => {
+        b.classList.toggle('text-yellow-400', i < currentRating);
+        b.classList.toggle('text-gray-300', i >= currentRating);
+      });
+    }
+    
+    // Comments API
+    async function loadComments(recipeId) {
+      try {
+        const res = await fetch(API + '/recipes/' + recipeId + '/comments');
+        const data = await res.json();
+        const comments = data.data || [];
+        document.getElementById('comment-count').textContent = comments.length + ' 条评论';
+        renderComments(comments);
+      } catch (e) {
+        console.error('Load comments failed:', e);
+        document.getElementById('comments-list').innerHTML = '<p class="text-sm text-gray-400 text-center py-4">加载评论失败</p>';
+      }
+    }
+    
+    function renderComments(comments) {
+      const container = document.getElementById('comments-list');
+      if (!comments.length) {
+        container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">暂无评论，快来抢沙发~</p>';
+        return;
+      }
+      container.innerHTML = comments.map(c => `
+        <div class="bg-white rounded-2xl card-shadow p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white text-xs font-bold">
+                ${(c.author || '匿名')[0]}
+              </div>
+              <span class="text-sm font-medium text-gray-700">${c.author || '匿名用户'}</span>
+            </div>
+            <div class="text-yellow-400 text-sm">${'★'.repeat(c.rating || 0)}${'☆'.repeat(5 - (c.rating || 0))}</div>
+          </div>
+          <p class="text-sm text-gray-600">${c.content || ''}</p>
+          <div class="text-xs text-gray-400 mt-2">${c.created_at ? new Date(c.created_at).toLocaleDateString('zh-CN') : ''}</div>
+        </div>
+      `).join('');
+    }
+    
+    async function submitComment() {
+      if (!currentRecipeId) return;
+      if (currentRating === 0) return showToast('请选择评分');
+      const content = document.getElementById('comment-text').value.trim();
+      if (!content) return showToast('请输入评论内容');
+      
+      try {
+        const res = await fetch(API + '/recipes/' + currentRecipeId + '/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: currentRating, content })
+        });
+        const data = await res.json();
+        if (data.code === 200) {
+          showToast('评论成功');
+          document.getElementById('comment-text').value = '';
+          currentRating = 0;
+          updateRatingStars();
+          loadComments(currentRecipeId);
+        } else {
+          showToast(data.message || '评论失败');
+        }
+      } catch (e) {
+        showToast('评论失败');
+      }
+    }
     function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2000); }
   </script>
 </body>

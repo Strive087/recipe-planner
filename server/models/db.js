@@ -66,6 +66,16 @@ db.exec(`
     expiry_date INTEGER,
     created_at INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS recipe_comments (
+    id TEXT PRIMARY KEY,
+    recipe_id TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+    comment TEXT,
+    user_id TEXT DEFAULT 'default_user',
+    created_at INTEGER,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+  );
 `);
 
 // 创建索引
@@ -83,6 +93,9 @@ try {
 } catch (e) {}
 try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_favorite_folders_user ON favorite_folders(user_id)`);
+} catch (e) {}
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_recipe_comments_recipe ON recipe_comments(recipe_id)`);
 } catch (e) {}
 
 // 初始化默认分类
