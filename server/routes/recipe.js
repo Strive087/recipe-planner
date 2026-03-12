@@ -93,13 +93,13 @@ router.get('/recipes/:id', (req, res) => {
 // 创建菜谱
 router.post('/recipes', (req, res) => {
   try {
-    const { name, coverImage, servings, category, tags, ingredients, steps } = req.body;
+    const { name, coverImage, servings, category, tags, ingredients, steps, prepTime, cookTime, difficulty, calories } = req.body;
     const id = uuidv4();
     const now = Date.now();
     
     const stmt = db.prepare(`
-      INSERT INTO recipes (id, name, cover_image, servings, category, tags, ingredients, steps, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO recipes (id, name, cover_image, servings, category, tags, ingredients, steps, prep_time, cook_time, difficulty, calories, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     stmt.run(
@@ -111,6 +111,10 @@ router.post('/recipes', (req, res) => {
       JSON.stringify(tags || []),
       JSON.stringify(ingredients || []),
       JSON.stringify(steps || []),
+      prepTime || 0,
+      cookTime || 0,
+      difficulty || '中等',
+      calories || 0,
       now,
       now
     );
@@ -124,12 +128,12 @@ router.post('/recipes', (req, res) => {
 // 更新菜谱
 router.put('/recipes/:id', (req, res) => {
   try {
-    const { name, coverImage, servings, category, tags, ingredients, steps } = req.body;
+    const { name, coverImage, servings, category, tags, ingredients, steps, prepTime, cookTime, difficulty, calories } = req.body;
     const now = Date.now();
     
     const stmt = db.prepare(`
       UPDATE recipes 
-      SET name = ?, cover_image = ?, servings = ?, category = ?, tags = ?, ingredients = ?, steps = ?, updated_at = ?
+      SET name = ?, cover_image = ?, servings = ?, category = ?, tags = ?, ingredients = ?, steps = ?, prep_time = ?, cook_time = ?, difficulty = ?, calories = ?, updated_at = ?
       WHERE id = ?
     `);
     
@@ -141,6 +145,10 @@ router.put('/recipes/:id', (req, res) => {
       JSON.stringify(tags || []),
       JSON.stringify(ingredients || []),
       JSON.stringify(steps || []),
+      prepTime || 0,
+      cookTime || 0,
+      difficulty || '中等',
+      calories || 0,
       now,
       req.params.id
     );

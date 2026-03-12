@@ -171,6 +171,31 @@
           <input type="number" id="recipe-servings" value="2" min="1" max="50"
             class="w-24 h-10 px-4 rounded-xl bg-gray-50 border-0 text-sm">
         </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-gray-500 mb-2 block">准备时间（分钟）</label>
+            <input type="number" id="recipe-prep-time" value="10" min="0" max="300"
+              class="w-full h-10 px-4 rounded-xl bg-gray-50 border-0 text-sm">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-500 mb-2 block">烹饪时间（分钟）</label>
+            <input type="number" id="recipe-cook-time" value="20" min="0" max="300"
+              class="w-full h-10 px-4 rounded-xl bg-gray-50 border-0 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">难度</label>
+          <div class="flex gap-2" id="recipe-difficulty">
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-diff="简单">简单</button>
+            <button class="chip active px-4 py-2 rounded-full text-xs font-medium" data-diff="中等">中等</button>
+            <button class="chip px-4 py-2 rounded-full text-xs font-medium bg-gray-100 text-gray-600" data-diff="困难">困难</button>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 mb-2 block">热量（千卡，可选）</label>
+          <input type="number" id="recipe-calories" value="0" min="0" max="5000"
+            class="w-32 h-10 px-4 rounded-xl bg-gray-50 border-0 text-sm">
+        </div>
         <div>
           <label class="text-xs font-medium text-gray-500 mb-2 block">分类</label>
           <div class="flex flex-wrap gap-2" id="recipe-category">
@@ -244,6 +269,13 @@
           chip.classList.add('active'); chip.classList.remove('bg-gray-100', 'text-gray-600'); appetite = chip.dataset.appetite;
         });
       });
+      // 难度选择器
+      document.querySelectorAll('#recipe-difficulty .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('#recipe-difficulty .chip').forEach(c => { c.classList.remove('active'); c.classList.add('bg-gray-100', 'text-gray-600'); });
+          chip.classList.add('active'); chip.classList.remove('bg-gray-100', 'text-gray-600');
+        });
+      });
     }
 
     // Load
@@ -277,6 +309,8 @@
               <div class="flex items-center gap-2 mt-1">
                 <span class="px-2 py-0.5 bg-green-50 text-green-600 text-xs rounded-full">${r.category}</span>
                 <span class="text-xs text-gray-400">${r.servings}人份</span>
+                ${r.difficulty ? `<span class="text-xs ${r.difficulty === '简单' ? 'text-green-500' : r.difficulty === '中等' ? 'text-orange-500' : 'text-red-500'}">${r.difficulty}</span>` : ''}
+                ${r.prep_time || r.cook_time ? `<span class="text-xs text-gray-400">🕐 ${(r.prep_time || 0) + (r.cook_time || 0)}分钟</span>` : ''}
               </div>
               <div class="flex gap-3 mt-2" onclick="event.stopPropagation()">
                 <button onclick="editRecipe('${r.id}')" class="text-xs text-orange-500 font-medium">编辑</button>
