@@ -283,6 +283,56 @@
   <!-- Toast -->
   <div id="toast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl text-sm font-medium hidden z-50 shadow-xl"></div>
 
+  <!-- Cooking Mode Overlay -->
+  <div id="cooking-mode" class="fixed inset-0 bg-gray-900 z-50 hidden flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 bg-gray-800/50">
+      <button onclick="exitCookingMode()" class="text-white/70 hover:text-white text-sm font-medium flex items-center gap-2">
+        <span>←</span> 退出烹饪
+      </button>
+      <div class="text-white/70 text-sm">
+        步骤 <span id="cooking-current">1</span> / <span id="cooking-total">1</span>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col items-center justify-center px-8 py-8">
+      <!-- Step Number -->
+      <div id="cooking-step-badge" class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white text-2xl font-bold mb-8 shadow-lg shadow-green-500/30">
+        1
+      </div>
+      
+      <!-- Step Description -->
+      <div class="text-center">
+        <p id="cooking-step-desc" class="text-white text-2xl font-medium leading-relaxed text-center">
+          步骤描述内容
+        </p>
+      </div>
+      
+      <!-- Progress Bar -->
+      <div class="w-full max-w-md mt-10">
+        <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+          <div id="cooking-progress" class="h-full bg-gradient-to-r from-green-400 to-green-500 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="px-8 py-6 bg-gray-800/50 flex items-center justify-between gap-4">
+      <button id="cooking-prev" onclick="cookingPrevStep()" class="flex-1 h-14 rounded-2xl bg-gray-700 hover:bg-gray-600 text-white text-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
+        ← 上一步
+      </button>
+      <button id="cooking-next" onclick="cookingNextStep()" class="flex-1 h-14 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white text-lg font-medium transition-all shadow-lg shadow-green-500/30 flex items-center justify-center gap-2">
+        下一步 →
+      </button>
+    </div>
+    
+    <!-- Wake Lock Indicator -->
+    <div id="wake-lock-indicator" class="absolute top-16 right-6 px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full hidden">
+      🔒 屏幕常亮
+    </div>
+  </div>
+
   <script>
     const API = '/api';
     let recipes = [];
@@ -567,6 +617,12 @@
             `).join('') || '<p class="text-sm text-gray-400">暂无步骤</p>'}
           </div>
         </div>
+        
+        ${recipe.steps && recipe.steps.length > 0 ? `
+        <button onclick="startCookingMode('${recipe.id}')" class="mt-4 w-full h-14 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 text-white text-lg font-semibold flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 hover:shadow-xl transition-all">
+          🍳 开始烹饪
+        </button>
+        ` : ''}
       `;
       
       // Reset comment form
@@ -678,6 +734,139 @@
         showToast('评论失败');
       }
     }
+    
+    // ==================== Cooking Mode ====================
+    let cookingSteps = [];
+    let currentStepIndex = 0;
+    let wakeLock = null;
+    
+    // Request Wake Lock to keep screen on
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          document.getElementById('wake-lock-indicator').classList.remove('hidden');
+          console.log('Wake lock activated');
+        } catch (err) {
+          console.log('Wake lock error:', err);
+        }
+      }
+    }
+    
+    // Release Wake Lock
+    async function releaseWakeLock() {
+      if (wakeLock) {
+        try {
+          await wakeLock.release();
+          wakeLock = null;
+          document.getElementById('wake-lock-indicator').classList.add('hidden');
+          console.log('Wake lock released');
+        } catch (err) {
+          console.log('Wake lock release error:', err);
+        }
+      }
+    }
+    
+    // Start Cooking Mode
+    function startCookingMode(recipeId) {
+      const recipe = recipes.find(r => r.id === recipeId);
+      if (!recipe || !recipe.steps || recipe.steps.length === 0) {
+        showToast('暂无烹饪步骤');
+        return;
+      }
+      
+      cookingSteps = recipe.steps;
+      currentStepIndex = 0;
+      
+      // Update UI
+      document.getElementById('cooking-total').textContent = cookingSteps.length;
+      updateCookingUI();
+      
+      // Show cooking mode
+      document.getElementById('cooking-mode').classList.remove('hidden');
+      document.getElementById('cooking-mode').classList.add('flex');
+      
+      // Request wake lock
+      requestWakeLock();
+    }
+    
+    // Exit Cooking Mode
+    function exitCookingMode() {
+      document.getElementById('cooking-mode').classList.add('hidden');
+      document.getElementById('cooking-mode').classList.remove('flex');
+      releaseWakeLock();
+    }
+    
+    // Update Cooking UI
+    function updateCookingUI() {
+      const step = cookingSteps[currentStepIndex];
+      
+      // Update step content
+      document.getElementById('cooking-current').textContent = currentStepIndex + 1;
+      document.getElementById('cooking-step-badge').textContent = currentStepIndex + 1;
+      document.getElementById('cooking-step-desc').textContent = step.desc || '';
+      
+      // Update progress bar
+      const progress = ((currentStepIndex + 1) / cookingSteps.length) * 100;
+      document.getElementById('cooking-progress').style.width = progress + '%';
+      
+      // Update button states
+      document.getElementById('cooking-prev').disabled = currentStepIndex === 0;
+      document.getElementById('cooking-next').disabled = currentStepIndex === cookingSteps.length - 1;
+      
+      // Update next button text for last step
+      const nextBtn = document.getElementById('cooking-next');
+      if (currentStepIndex === cookingSteps.length - 1) {
+        nextBtn.innerHTML = '🎉 完成烹饪';
+        nextBtn.classList.add('from-orange-500', 'to-orange-600');
+        nextBtn.classList.remove('from-green-500', 'to-green-600');
+      } else {
+        nextBtn.innerHTML = '下一步 →';
+        nextBtn.classList.remove('from-orange-500', 'to-orange-600');
+        nextBtn.classList.add('from-green-500', 'to-green-600');
+      }
+    }
+    
+    // Previous Step
+    function cookingPrevStep() {
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        updateCookingUI();
+      }
+    }
+    
+    // Next Step
+    function cookingNextStep() {
+      if (currentStepIndex < cookingSteps.length - 1) {
+        currentStepIndex++;
+        updateCookingUI();
+      } else {
+        // Completed all steps
+        showToast('🎉 烹饪完成！祝您用餐愉快！');
+        exitCookingMode();
+      }
+    }
+    
+    // Handle visibility change (re-request wake lock when tab becomes visible)
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && document.getElementById('cooking-mode').classList.contains('flex')) {
+        await requestWakeLock();
+      }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('cooking-mode').classList.contains('flex')) return;
+      
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        cookingPrevStep();
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+        cookingNextStep();
+      } else if (e.key === 'Escape') {
+        exitCookingMode();
+      }
+    });
+    
     function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2000); }
   </script>
 </body>
