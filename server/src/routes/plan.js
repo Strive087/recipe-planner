@@ -39,22 +39,22 @@ router.post('/plan/generate', (req, res) => {
   }
   
   selectedRecipes.forEach(recipe => {
-    const ingredients = recipe.ingredients || [];
+    let ingredients = recipe.ingredients || [];
     if (typeof ingredients === 'string') {
       try { ingredients = JSON.parse(ingredients); } catch(e) { ingredients = ingredients.split(','); }
     }
-    (ingredients || []).forEach(ing => {
+    (ingredients || []).forEach((ing) => {
       // 排除用户指定不吃的食物
-      if (avoidFoods && ing.name.includes(avoidFoods)) return;
+      if (avoidFoods && String(ing.name).includes(avoidFoods)) return;
       // 排除库存中已有的食材
-      if (pantryItems.has(ing.name)) return;
+      if (pantryItems.has(String(ing.name))) return;
       
-      const existing = shoppingList.find(i => i.name === ing.name);
+      let existing = shoppingList.find(i => i.name === ing.name);
       if (existing) {
         existing.totalAmount += (ing.amount || 0) * appetiteCoeff;
       } else {
         let category = 'other';
-        for (const [key, val] of Object.entries(categoryMap)) {
+        for (let [key, val] of Object.entries(categoryMap)) {
           if (ing.name.includes(key)) { category = val; break; }
         }
         shoppingList.push({
