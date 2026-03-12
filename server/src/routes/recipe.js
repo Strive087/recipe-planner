@@ -5,10 +5,25 @@ const db = require('../../models/db');
 // 转换 JSON 字段的辅助函数
 const parseRecipe = (r) => ({
   ...r,
-  tags: r.tags ? JSON.parse(r.tags) : [],
-  ingredients: r.ingredients ? JSON.parse(r.ingredients) : [],
-  steps: r.steps ? JSON.parse(r.steps) : [],
+  tags: safeParse(r.tags),
+  ingredients: safeParse(r.ingredients),
+  steps: safeParse(r.steps),
 });
+
+// 安全解析JSON
+function safeParse(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try {
+    return JSON.parse(val);
+  } catch (e) {
+    // 如果是逗号分隔的字符串，转为数组
+    if (typeof val === 'string' && val.includes(',')) {
+      return val.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+  }
+}
 
 // ===== 搜索和分类 API（放在 /recipes 前面） =====
 
