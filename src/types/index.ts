@@ -71,3 +71,71 @@ export const CATEGORY_OPTIONS = ['荤菜', '素菜', '汤羹', '主食', '其他
 
 // 单位选项
 export const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', '个', '片', '根', '勺', '适量'] as const;
+
+// ========== 新增：AI规划功能类型 ==========
+
+// 每日餐食安排
+export interface MealSlot {
+  mealType: 'breakfast' | 'lunch' | 'dinner';
+  recipeName: string;
+  recipeId?: string;
+}
+
+// 每日规划
+export interface DailyPlan {
+  day: number;
+  meals: MealSlot[];
+}
+
+// 食材采购项
+export interface PlanShoppingItem {
+  name: string;
+  amount: number;
+  unit: string;
+  category: 'meat' | 'vegetable' | 'seasoning' | 'dry' | 'other';
+}
+
+// AI 规划结果
+export interface PlanGenerateResult {
+  daily_plans: DailyPlan[];
+  shopping_list: PlanShoppingItem[];
+}
+
+// 规划生成请求
+export interface GeneratePlanRequest {
+  days: number;
+  mealsPerDay: number;
+  preferences: string;
+}
+
+// ========== 食材库存类型 ==========
+export interface PantryItem {
+  id: string;
+  name: string;
+  amount: number;
+  unit: string;
+  category: 'meat' | 'vegetable' | 'seasoning' | 'dry' | 'other';
+  createdAt: number;
+  updatedAt: number;
+}
+
+// 食材分类选项
+export const PANTRY_CATEGORY_OPTIONS = [
+  { key: 'meat', label: '肉类' },
+  { key: 'vegetable', label: '蔬菜' },
+  { key: 'seasoning', label: '调味品' },
+  { key: 'dry', label: '干货' },
+  { key: 'other', label: '其他' },
+] as const;
+
+// ========== 收藏夹类型 ==========
+export interface FavoriteFolder {
+  id: string;
+  name: string;
+  recipeCount: number;
+  createdAt: number;
+}
+
+export interface FavoriteFolderWithRecipes extends FavoriteFolder {
+  recipes: Recipe[];
+}

@@ -1,5 +1,5 @@
 import request from './request';
-import type { Recipe, PlanConfig, PlanResult, ApiResponse } from '../types';
+import type { Recipe, PlanConfig, PlanResult, ApiResponse, GeneratePlanRequest, PlanGenerateResult } from '../types';
 
 const SYSTEM_PROMPT = `你是一个专业的行政主厨和精算师。请严格按照 JSON 格式输出，不要输出任何解释文字。
 
@@ -84,6 +84,16 @@ export const planApi = {
     //   responseType: 'text',
     // });
     // return response;
+  },
+
+  // AI 规划生成接口 - 根据天数、每餐数、偏好生成规划
+  generatePlan: async (days: number, mealsPerDay: number, preferences: string): Promise<PlanGenerateResult> => {
+    const res = await request.post<ApiResponse<PlanGenerateResult>>('/plan/generate', {
+      days,
+      mealsPerDay,
+      preferences,
+    });
+    return res.data;
   },
 };
 

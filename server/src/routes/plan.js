@@ -1,12 +1,26 @@
 const express = require('express');
 const router = express.Router();
 
+// 获取库存中已有的食材名称
+function getPantryItems() {
+  const db = require('../../models/db');
+  try {
+    const items = db.prepare('SELECT name FROM pantry_items WHERE amount > 0').all();
+    return new Set(items.map(i => i.name));
+  } catch (e) {
+    return new Set();
+  }
+}
+
 // 模拟 AI 生成规划
 router.post('/plan/generate', (req, res) => {
   const { recipes, config } = req.body;
   const { servings, appetite, avoidFoods } = config || {};
   
   const appetiteCoeff = appetite === 'large' ? 1.2 : appetite === 'small' ? 0.8 : 1.0;
+  
+  // 获取库存中已有的食材
+  const pantryItems = getPantryItems();
   
   // 模拟采购清单生成
   const shoppingList = [];
@@ -19,7 +33,11 @@ router.post('/plan/generate', (req, res) => {
   recipes.forEach(recipe => {
     const ingredients = recipe.ingredients || [];
     ingredients.forEach(ing => {
+      // 排除用户指定不吃的食物
       if (avoidFoods && ing.name.includes(avoidFoods)) return;
+      // 排除库存中已有的食材
+      if (pantryItems.has(ing.name)) return;
+      
       const existing = shoppingList.find(i => i.name === ing.name);
       if (existing) {
         existing.totalAmount += (ing.amount || 0) * appetiteCoeff;

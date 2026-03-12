@@ -15,6 +15,7 @@
   "dependencies": {
     "@nutui/nutui-react-taro": "^3.0.19",
     "@tarojs/components": "^3.6.29",
+    "@tarojs/mini-runner": "^3.6.37",
     "@tarojs/plugin-framework-react": "^3.6.29",
     "@tarojs/plugin-platform-h5": "^3.6.29",
     "@tarojs/plugin-platform-weapp": "^3.6.29",

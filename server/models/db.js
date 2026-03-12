@@ -32,12 +32,20 @@ db.exec(`
     created_at INTEGER
   );
 
-  CREATE TABLE IF NOT EXISTS favorites (
+  CREATE TABLE IF NOT EXISTS recipe_favorites (
     id TEXT PRIMARY KEY,
     recipe_id TEXT NOT NULL,
-    user_id TEXT DEFAULT 'default_user',
+    folder_id TEXT NOT NULL,
     created_at INTEGER,
-    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (folder_id) REFERENCES favorite_folders(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS favorite_folders (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    user_id TEXT DEFAULT 'default_user',
+    created_at INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS plans (
@@ -46,6 +54,16 @@ db.exec(`
     selected_recipe_ids TEXT,
     config TEXT,
     result TEXT,
+    created_at INTEGER
+  );
+
+  CREATE TABLE IF NOT EXISTS pantry_items (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    amount REAL DEFAULT 0,
+    unit TEXT DEFAULT 'g',
+    category TEXT DEFAULT 'other',
+    expiry_date INTEGER,
     created_at INTEGER
   );
 `);
@@ -58,10 +76,13 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_recipes_category ON recipes(category)`);
 } catch (e) {}
 try {
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_favorites_recipe ON favorites(recipe_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_recipe_favorites_recipe ON recipe_favorites(recipe_id)`);
 } catch (e) {}
 try {
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_recipe_favorites_folder ON recipe_favorites(folder_id)`);
+} catch (e) {}
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_favorite_folders_user ON favorite_folders(user_id)`);
 } catch (e) {}
 
 // 初始化默认分类

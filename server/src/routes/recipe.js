@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../models/db');
+const db = require('../../models/db');
 
 // 转换 JSON 字段的辅助函数
 const parseRecipe = (r) => ({

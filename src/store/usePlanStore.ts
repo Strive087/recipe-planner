@@ -1,12 +1,17 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import Taro from '@tarojs/taro';
-import type { PlanConfig, PlanResult } from '../types';
+import type { PlanConfig, PlanResult, PlanGenerateResult } from '../types';
 
 interface PlanStore {
   selectedIds: string[];
   config: PlanConfig;
   result: PlanResult | null;
+  // 新增：AI规划参数
+  planDays: number;
+  planMealsPerDay: number;
+  planPreferences: string;
+  planResult: PlanGenerateResult | null;
   loading: boolean;
   
   addRecipe: (id: string) => void;
@@ -16,6 +21,9 @@ interface PlanStore {
   
   setConfig: (partial: Partial<PlanConfig>) => void;
   setResult: (r: PlanResult | null) => void;
+  // 新增：设置规划参数
+  setPlanParams: (days: number, mealsPerDay: number, preferences: string) => void;
+  setPlanResult: (r: PlanGenerateResult | null) => void;
   setLoading: (v: boolean) => void;
 }
 
@@ -32,6 +40,11 @@ export const usePlanStore = create<PlanStore>()(
       selectedIds: [],
       config: defaultConfig,
       result: null,
+      // 新增：默认规划参数
+      planDays: 3,
+      planMealsPerDay: 3,
+      planPreferences: '',
+      planResult: null,
       loading: false,
 
       addRecipe: (id: string) => {
@@ -56,6 +69,13 @@ export const usePlanStore = create<PlanStore>()(
       },
 
       setResult: (r: PlanResult | null) => set({ result: r }),
+      
+      setPlanParams: (days: number, mealsPerDay: number, preferences: string) => {
+        set({ planDays: days, planMealsPerDay: mealsPerDay, planPreferences: preferences });
+      },
+      
+      setPlanResult: (r: PlanGenerateResult | null) => set({ planResult: r }),
+      
       setLoading: (v: boolean) => set({ loading: v }),
     }),
     {

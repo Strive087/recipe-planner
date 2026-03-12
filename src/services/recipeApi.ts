@@ -1,5 +1,5 @@
 import request from './request';
-import type { Recipe, ApiResponse } from '../types';
+import type { Recipe, ApiResponse, FavoriteFolder, FavoriteFolderWithRecipes, PantryItem } from '../types';
 
 export interface Category {
   key: string;
@@ -38,6 +38,48 @@ export const recipeApi = {
   // 取消收藏
   unfavorite: (id: string) => 
     request.delete<ApiResponse<{ favorited: boolean }>>(`/recipes/${id}/favorite`),
+
+  // ========== 收藏夹 API ==========
+  // 获取所有收藏夹
+  getFolders: () => 
+    request.get<ApiResponse<FavoriteFolder[]>>('/favorites'),
+  
+  // 创建收藏夹
+  createFolder: (name: string) => 
+    request.post<ApiResponse<FavoriteFolder>>('/favorites', { name }),
+  
+  // 获取收藏夹内的菜谱
+  getFolderRecipes: (folderId: string) => 
+    request.get<ApiResponse<FavoriteFolderWithRecipes>>(`/favorites/${folderId}`),
+  
+  // 添加菜谱到收藏夹
+  addToFolder: (folderId: string, recipeId: string) => 
+    request.post<ApiResponse<null>>(`/favorites/${folderId}/add`, { recipeId }),
+  
+  // 从收藏夹移除菜谱
+  removeFromFolder: (folderId: string, recipeId: string) => 
+    request.delete<ApiResponse<null>>(`/favorites/${folderId}/remove/${recipeId}`),
+
+  // ========== 食材库存 API ==========
+  // 获取库存列表
+  getPantry: () => 
+    request.get<ApiResponse<PantryItem[]>>('/pantry'),
+  
+  // 添加食材到库存
+  addPantryItem: (item: Omit<PantryItem, 'id' | 'createdAt' | 'updatedAt'>) => 
+    request.post<ApiResponse<PantryItem>>('/pantry', item),
+  
+  // 更新库存食材
+  updatePantryItem: (id: string, item: Partial<PantryItem>) => 
+    request.put<ApiResponse<PantryItem>>(`/pantry/${id}`, item),
+  
+  // 删除库存食材
+  deletePantryItem: (id: string) => 
+    request.delete<ApiResponse<null>>(`/pantry/${id}`),
+  
+  // 清空库存
+  clearPantry: () => 
+    request.post<ApiResponse<null>>('/pantry/clear'),
 };
 
 export default recipeApi;

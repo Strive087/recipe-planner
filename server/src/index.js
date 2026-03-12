@@ -5,8 +5,10 @@ const path = require('path');
 // 初始化数据库
 require('../models/db');
 
-const recipeRoutes = require('../routes/recipe');
-const planRoutes = require('../routes/plan');
+const recipeRoutes = require('./routes/recipe');
+const planRoutes = require('./routes/plan');
+const favoritesRoutes = require('./routes/favorites');
+const pantryRoutes = require('./routes/pantry');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +20,8 @@ app.use(express.json());
 // API 路由（必须在前，静态文件和 fallback 之前）
 app.use('/api', recipeRoutes);
 app.use('/api', planRoutes);
+app.use('/api', favoritesRoutes);
+app.use('/api', pantryRoutes);
 
 // 静态文件服务 - 前端页面
 app.use(express.static(path.join(__dirname, '../public')));

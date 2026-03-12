@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Image } from '@tarojs/taro';
+import Taro from '@tarojs/taro';
 import { useEffect, useState } from 'react';
 import { useRouter } from '@tarojs/taro';
 import { useRecipeStore } from '../../store/useRecipeStore';
@@ -42,6 +43,25 @@ export default function RecipeDetail() {
 
   const handleEdit = () => {
     router.navigate({ path: '/pages/recipe-edit/index', params: { id: recipe.id } });
+  };
+
+  // 分享配置
+  useEffect(() => {
+    // 动态设置分享配置
+    Taro.onShareAppMessage(() => {
+      return {
+        title: recipe.name,
+        path: `/pages/recipe-detail/index?id=${recipe.id}`,
+        imageUrl: recipe.coverImage,
+      };
+    });
+  }, [recipe]);
+
+  const handleShare = () => {
+    Taro.showToast({
+      title: '点击右上角分享',
+      icon: 'none',
+    });
   };
 
   return (
@@ -101,6 +121,7 @@ export default function RecipeDetail() {
 
       {/* 底部按钮 */}
       <View className="bottom-actions">
+        <View className="btn-secondary" onClick={handleShare}>分享</View>
         <View className="btn-secondary" onClick={handleEdit}>编辑</View>
         <View 
           className={`btn-primary ${selected ? 'btn-added' : ''}`}
