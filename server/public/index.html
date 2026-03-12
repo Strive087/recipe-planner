@@ -108,6 +108,9 @@
 
   <!-- Page: Recipe List -->
   <div class="page active px-4 py-6" id="page-list" style="padding-bottom: 200px;">
+    <!-- 智能推荐 -->
+    <div id="smart-recommend" class="mb-6"></div>
+
     <!-- Search -->
     <div class="relative mb-6">
       <input type="text" id="search-input" placeholder="搜索你的菜谱..." 
@@ -408,7 +411,263 @@
     ];
 
     // Init
-    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); setupRatingStars(); checkOnboarding(); });
+    document.addEventListener('DOMContentLoaded', () => { loadRecipes(); setupTabs(); setupChips(); setupRatingStars(); checkOnboarding(); loadPantry(); });
+
+    // ==================== 智能推荐功能 ====================
+    const PANTRY_KEY = 'recipe_planner_pantry';
+    let pantryItems = [];
+
+    // 加载 pantry 数据
+    function loadPantry() {
+      try {
+        const stored = localStorage.getItem(PANTRY_KEY);
+        pantryItems = stored ? JSON.parse(stored) : [];
+        // 如果没有 pantry 数据，显示引导
+        if (pantryItems.length === 0) {
+          renderPantryEmpty();
+        } else {
+          // 有 pantry 数据时自动推荐
+          recommendRecipes();
+        }
+      } catch (e) {
+        console.error('Load pantry failed:', e);
+        pantryItems = [];
+      }
+    }
+
+    // 保存 pantry 数据
+    function savePantry(items) {
+      pantryItems = items;
+      localStorage.setItem(PANTRY_KEY, JSON.stringify(items));
+    }
+
+    // 渲染空 pantry 提示
+    function renderPantryEmpty() {
+      const container = document.getElementById('smart-recommend');
+      container.innerHTML = `
+        <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 border border-orange-100">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-xl flex-shrink-0">💡</div>
+            <div class="flex-1">
+              <h4 class="text-sm font-semibold text-orange-800 mb-1">智能推荐</h4>
+              <p class="text-xs text-orange-600 mb-3">添加食材到库存，我来帮你推荐可以做的菜！</p>
+              <button onclick="showPantryTab()" class="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-semibold rounded-full shadow-lg shadow-orange-500/30 hover:shadow-xl transition-all">
+                去添加食材 →
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 智能推荐算法
+    function recommendRecipes() {
+      const container = document.getElementById('smart-recommend');
+      
+      if (!pantryItems.length || !recipes.length) {
+        renderPantryEmpty();
+        return;
+      }
+
+      // 归一化 pantry 食材名称（去掉量词，统一小写）
+      const pantryNames = pantryItems.map(p => p.name.toLowerCase().trim());
+      
+      // 计算每个菜谱的匹配度
+      const recommendations = recipes.map(recipe => {
+        if (!recipe.ingredients || recipe.ingredients.length === 0) {
+          return { recipe, matchRate: 0, matched: [], missing: [] };
+        }
+
+        const matched = [];
+        const missing = [];
+
+        recipe.ingredients.forEach(ing => {
+          const ingName = ing.name.toLowerCase().trim();
+          // 模糊匹配：检查 pantry 中是否有相似食材
+          const found = pantryNames.find(p => 
+            p.includes(ingName) || ingName.includes(p) || 
+            p.split('').some(c => ingName.includes(c) && c.length > 1)
+          );
+          
+          if (found) {
+            matched.push(ing.name);
+          } else {
+            missing.push(ing.name);
+          }
+        });
+
+        const matchRate = matched.length / recipe.ingredients.length;
+        return { recipe, matchRate, matched, missing };
+      });
+
+      // 排序：优先显示匹配度高的
+      recommendations.sort((a, b) => b.matchRate - a.matchRate);
+
+      // 取前3个推荐（匹配度 > 0 的）
+      const topRecommendations = recommendations.filter(r => r.matchRate > 0).slice(0, 3);
+
+      if (topRecommendations.length === 0) {
+        container.innerHTML = `
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-xl flex-shrink-0">🛒</div>
+              <div class="flex-1">
+                <h4 class="text-sm font-semibold text-blue-800 mb-1">智能推荐</h4>
+                <p class="text-xs text-blue-600 mb-2">库存不足，试试去添加更多食材？</p>
+                <div class="text-xs text-gray-500">当前库存: ${pantryItems.map(p => p.name).join('、')}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // 渲染推荐结果
+      container.innerHTML = `
+        <div class="bg-white rounded-2xl card-shadow-lg overflow-hidden mb-4">
+          <div class="px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center gap-2">
+            <span class="text-white">✨</span>
+            <span class="text-white text-sm font-semibold">智能推荐</span>
+            <span class="ml-auto text-white/80 text-xs">根据你的库存推荐</span>
+          </div>
+          <div class="p-3 space-y-2">
+            ${topRecommendations.map(r => `
+              <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-green-50 cursor-pointer transition-colors" onclick="showDetailPage('${r.recipe.id}')">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-lg font-bold shadow">
+                  ${r.recipe.name[0]}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-gray-800 truncate">${r.recipe.name}</span>
+                    <span class="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">${Math.round(r.matchRate * 100)}% 可做</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-0.5 truncate">
+                    ${r.matched.length > 0 ? `<span class="text-green-600">✓ ${r.matched.slice(0, 2).join('、')}${r.matched.length > 2 ? '...' : ''}</span>` : ''}
+                    ${r.missing.length > 0 ? `<span class="text-orange-500 ml-1">缺 ${r.missing.slice(0, 2).join('、')}${r.missing.length > 2 ? '...' : ''}</span>` : ''}
+                  </div>
+                </div>
+                <div class="text-gray-300">→</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 跳转到 pantry 标签页
+    function showPantryTab() {
+      document.querySelector('[data-tab="pantry"]').click();
+      // 初始化 pantry 页面
+      initPantryPage();
+    }
+
+    // 初始化 pantry 页面
+    function initPantryPage() {
+      const page = document.getElementById('page-pantry');
+      if (!page) {
+        // 创建 pantry 页面
+        const nav = document.querySelector('[data-tab="pantry"]');
+        nav.classList.remove('hidden');
+        
+        const pagesContainer = document.querySelector('#page-list');
+        const pantryPage = document.createElement('div');
+        pantryPage.className = 'page px-4 py-6';
+        pantryPage.id = 'page-pantry';
+        pantryPage.style.paddingBottom = '200px';
+        pantryPage.innerHTML = `
+          <div class="mb-4">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">我的食材库存</h3>
+            <p class="text-xs text-gray-500">添加你现有的食材，系统会自动推荐可做的菜</p>
+          </div>
+          
+          <!-- 添加食材 -->
+          <div class="bg-white rounded-2xl card-shadow-lg p-4 mb-4">
+            <div class="flex gap-2 mb-3">
+              <input type="text" id="pantry-input" placeholder="输入食材名称，如：鸡蛋、番茄..."
+                class="flex-1 h-10 px-3 rounded-xl bg-gray-50 text-sm"
+                onkeypress="if(event.key==='Enter')addPantryItem()">
+              <button onclick="addPantryItem()" class="px-4 h-10 bg-green-500 text-white text-sm font-semibold rounded-xl hover:bg-green-600 transition-colors">
+                添加
+              </button>
+            </div>
+            <div id="pantry-tags" class="flex flex-wrap gap-2"></div>
+          </div>
+          
+          <!-- 快速添加 -->
+          <div class="mb-4">
+            <p class="text-xs text-gray-500 mb-2">快速添加</p>
+            <div class="flex flex-wrap gap-2">
+              ${['鸡蛋', '番茄', '土豆', '猪肉', '牛肉', '鸡肉', '米饭', '面条', '豆腐', '洋葱'].map(item => `
+                <button onclick="quickAddPantry('${item}')" class="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-full hover:bg-green-100 hover:text-green-600 transition-colors">
+                  + ${item}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          
+          <button onclick="recommendRecipes()" class="w-full h-12 rounded-2xl btn-primary text-white text-sm font-semibold">
+            🔄 刷新推荐
+          </button>
+        `;
+        pagesContainer.parentNode.insertBefore(pantryPage, pagesContainer.nextSibling);
+      }
+      
+      renderPantryTags();
+    }
+
+    // 渲染 pantry 标签
+    function renderPantryTags() {
+      const container = document.getElementById('pantry-tags');
+      if (!container) return;
+      
+      container.innerHTML = pantryItems.map((item, i) => `
+        <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 text-sm rounded-full">
+          ${item.name}
+          <button onclick="removePantryItem(${i})" class="w-4 h-4 rounded-full hover:bg-green-200 flex items-center justify-center text-xs">×</button>
+        </span>
+      `).join('') || '<span class="text-xs text-gray-400">暂无食材，点击上方添加</span>';
+    }
+
+    // 添加 pantry 项
+    function addPantryItem() {
+      const input = document.getElementById('pantry-input');
+      const name = input.value.trim();
+      if (!name) return;
+      
+      // 检查是否已存在
+      if (pantryItems.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        showToast('食材已存在');
+        return;
+      }
+      
+      pantryItems.push({ name, amount: 0, unit: '适量' });
+      savePantry(pantryItems);
+      input.value = '';
+      renderPantryTags();
+      recommendRecipes();
+      showToast('添加成功');
+    }
+
+    // 快速添加
+    function quickAddPantry(name) {
+      if (pantryItems.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        showToast('食材已存在');
+        return;
+      }
+      pantryItems.push({ name, amount: 0, unit: '适量' });
+      savePantry(pantryItems);
+      renderPantryTags();
+      recommendRecipes();
+      showToast(`已添加 ${name}`);
+    }
+
+    // 删除 pantry 项
+    function removePantryItem(index) {
+      pantryItems.splice(index, 1);
+      savePantry(pantryItems);
+      renderPantryTags();
+      recommendRecipes();
+    }
 
     // Tabs
     function setupTabs() {
@@ -446,6 +705,10 @@
         const data = await res.json();
         recipes = data.data || [];
         renderRecipes();
+        // 加载完菜谱后刷新推荐
+        if (pantryItems.length > 0) {
+          recommendRecipes();
+        }
       } catch (e) { showToast('加载失败'); }
     }
 
